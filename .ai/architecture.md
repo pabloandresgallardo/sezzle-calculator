@@ -18,9 +18,12 @@ Las secciones siguientes describen la arquitectura acordada en ADR-001. Esta tab
 | Modelo del frontend: `calculatorReducer` (máquina de estados pura), `limits`, `errorMessages`, `types` | implementado | `frontend/src/features/calculator/model/` |
 | `useCalculator` (efectos de API con `AbortController`, teclado y paste en `window`) y `calculatorApi` (fetch tipado) | implementado | `frontend/src/features/calculator/{hooks,api}/` |
 | `shared/` | vacío (`.gitkeep`) | `frontend/src/shared/` |
-| Vite en `:5180` con proxy de `/api` a `:8090` | configurado | `frontend/vite.config.ts` |
-| nginx con proxy de `/api/` a `backend:8090` | configurado | `frontend/nginx.conf` |
-| Stack Docker con healthchecks | configurado | `backend/Dockerfile`, `frontend/Dockerfile`, `docker-compose*.yml` |
+| Vite en `:5180`: `/api/java` → `:8090`, `/api/go` → `:8091` (quita el prefijo; `/health` → `/actuator/health`), `/api` → Java | configurado | `frontend/vite.config.ts` |
+| nginx: `resolver 127.0.0.11` y `proxy_pass` con variables; `/api/java/` → `backend-java:8090/api/`, `/api/go/` → `backend-go:8091/api/`, `/api/{b}/health` → `/actuator/health`, `/api/` → Java; `proxy_connect_timeout 2s` | configurado | `frontend/nginx.conf` |
+| Stack Docker de 3 servicios (`backend-java`, `backend-go`, `web` con `service_started`) con healthchecks | configurado | `backend/Dockerfile`, `backend-go/Dockerfile`, `frontend/Dockerfile`, `docker-compose*.yml` |
+| Backend Go: `decimal` (math/big), `domain`, `app`, `httpapi` (decoder estricto tipo Jackson, ProblemDetail, health, OpenAPI embebido + Swagger UI), `cmd/server` (`-healthcheck`) | implementado | `backend-go/` |
+| Contrato compartido: 80 casos de paridad + OpenAPI | implementado | `contract/` |
+| Frontend: selección de backend (`checkHealth`, `useBackends`, `BackendSelector`), failover con un reintento | implementado | `frontend/src/shared/backend/`, `features/calculator/{api,hooks}/` |
 
 ## Visión
 
@@ -78,7 +81,7 @@ Reglas numéricas:
 - Todo se calcula con `BigDecimal`. `result` viaja como string para que JavaScript no lo pase a double y pierda precisión.
 - La división usa escala 10 con `RoundingMode.HALF_EVEN` y quita los ceros finales.
 
-El contrato es **compartido con la futura implementación en Go**: el frontend no debe cambiar al reemplazar el backend.
+El contrato es **compartido por los dos backends** (Java y Go) y lo verifica `contract/` (ADR-004). El frontend no conoce diferencias entre ellos: solo cambia el prefijo de la URL.
 
 Otros endpoints: `GET /actuator/health`, `GET /v3/api-docs`, `GET /swagger-ui.html`.
 
@@ -115,9 +118,11 @@ src/
 
 | Entorno | Front | Back | Cómo llega `/api` |
 |---------|-------|------|-------------------|
-| Desarrollo | Vite `:5180` | `mvn spring-boot:run` `:8090` | proxy de Vite |
-| docker-compose | nginx `:3000` | contenedor `:8090` | proxy de nginx |
-| E2E | nginx en puerto efímero | contenedor interno | proxy de nginx |
+| Desarrollo | Vite `:5180` | Java `make run-backend` `:8090` · Go `make run-go` `:8091` | proxy de Vite por prefijo |
+| docker-compose (`docker compose up --build` o `make up`) | nginx `:3000` | `backend-java` `:8090` · `backend-go` `:8091` | proxy de nginx por prefijo |
+| E2E | nginx en puerto efímero | los dos backends, internos | proxy de nginx |
+
+**Selección de backend (frontend):** Java por defecto en cada carga (sin persistencia). Al montar se chequea `/api/{b}/health` con timeout de 2 s; si uno está caído se oculta el selector y se usa el sano; mientras haya uno caído se re-chequea cada 10 s. Ante un error de indisponibilidad (red, 5xx o timeout de 10 s) se marca caído el backend usado, se re-chequea el otro y se reintenta una vez. Detalle y casos que se corrigen solos: ADR-004.
 
 Front y back comparten origen en todos los entornos, así que **no se configura CORS**.
 

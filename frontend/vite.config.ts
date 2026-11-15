@@ -1,7 +1,23 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
+import { resolveProxyTargets } from './src/devProxy.ts';
 
-const apiTarget = process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:8090';
+const { java: javaTarget, go: goTarget } = resolveProxyTargets(process.env);
+
+/**
+ * Same routes as nginx: `/api/{backend}/health` → `/actuator/health`, `/api/{backend}/…` → `/api/…`.
+ */
+function backendProxy(backend: 'java' | 'go', target: string) {
+  const prefix = `/api/${backend}`;
+  return {
+    target,
+    changeOrigin: true,
+    rewrite: (path: string) =>
+      /^\/health(\?|$)/.test(path.slice(prefix.length))
+        ? `/actuator/health${path.slice(prefix.length + '/health'.length)}`
+        : `/api${path.slice(prefix.length)}`,
+  };
+}
 
 export default defineConfig({
   plugins: [react()],
@@ -9,7 +25,10 @@ export default defineConfig({
     port: Number(process.env.VITE_PORT ?? 5180),
     strictPort: true,
     proxy: {
-      '/api': { target: apiTarget, changeOrigin: true },
+      // Matched in order: the per-backend prefixes first, then `/api` (compatibility) → Java.
+      '/api/java/': backendProxy('java', javaTarget),
+      '/api/go/': backendProxy('go', goTarget),
+      '/api': { target: javaTarget, changeOrigin: true },
     },
   },
   test: {

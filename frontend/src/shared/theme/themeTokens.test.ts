@@ -53,6 +53,7 @@ const TEXT_PAIRS: readonly [string, string][] = [
   ['--color-text', '--color-key'],
   ['--color-text', '--color-action'],
   ['--color-muted', '--color-screen'],
+  ['--color-muted', '--color-bg'],
   ['--color-error', '--color-screen'],
   ['--color-operator-text', '--color-operator'],
   ['--color-accent-text', '--color-accent'],

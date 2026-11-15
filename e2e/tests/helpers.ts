@@ -35,3 +35,23 @@ export async function pasteText(page: Page, text: string): Promise<void> {
   }, text);
 }
 
+/** Lets the page process pending responses and re-render (two frames plus a task). */
+export async function settle(page: Page): Promise<void> {
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 0)));
+      }),
+  );
+}
+
+/**
+ * Opens the app and waits until it is interactive: a calculator button has rendered and React has
+ * run its effects (the window keydown/paste listeners). Typing or pasting right after a bare
+ * `goto` can otherwise reach the page before those listeners exist (seen on WebKit).
+ */
+export async function openApp(page: Page): Promise<void> {
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: '7', exact: true })).toBeVisible();
+  await settle(page);
+}

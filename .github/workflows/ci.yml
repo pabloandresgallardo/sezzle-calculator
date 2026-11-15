@@ -48,8 +48,36 @@ jobs:
           name: frontend-coverage
           path: frontend/coverage
 
+  backend-go:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend-go
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: backend-go/go.mod
+          # no go.sum (standard library only): key the cache on go.mod
+          cache-dependency-path: backend-go/go.mod
+      - name: gofmt
+        run: |
+          UNFORMATTED=$(gofmt -l .)
+          if [ -n "$UNFORMATTED" ]; then echo "gofmt needed:"; echo "$UNFORMATTED"; exit 1; fi
+      - run: go vet ./...
+      - name: Tests (race) with coverage
+        run: mkdir -p coverage && go test -race -coverprofile=coverage/coverage.out ./...
+      - name: Coverage gate (internal/..., 90%)
+        run: sh scripts/coverage-gate.sh coverage/coverage.out 90
+      - run: go build ./...
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: backend-go-coverage
+          path: backend-go/coverage
+
   e2e:
-    needs: [backend, frontend]
+    needs: [backend, backend-go, frontend]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

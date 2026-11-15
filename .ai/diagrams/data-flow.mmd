@@ -1,28 +1,33 @@
 sequenceDiagram
   actor User
-  participant UI as Atomic UI
-  participant Hook as useCalculator
+  participant UI as Calculator UI
+  participant BK as useBackends
   participant Api as calculatorApi
-  participant Ctrl as CalculatorController
-  participant Core as CalculatorService
+  participant NX as nginx
+  participant J as backend-java
+  participant G as backend-go
+  UI->>BK: mount
+  BK->>NX: GET /api/java/health + /api/go/health
+  NX-->>BK: UP / UP
+  BK-->>UI: active = java, selector visible
   User->>UI: 6 ÷ 3 =
-  UI->>Hook: dispatch(equals)
-  Hook->>Hook: validate input
-  alt invalid number
-    Hook-->>UI: client error
-  else valid
-    Hook->>Api: calculate(divide, [6, 3])
-    Api->>Ctrl: POST /api/v1/calculate
-    Ctrl->>Ctrl: validate request
-    Ctrl->>Core: execute(command)
-    alt success
-      Core-->>Ctrl: BigDecimal result
-      Ctrl-->>Api: 200 {"result":"2"}
-    else divisor is zero
-      Core-->>Ctrl: DomainException
-      Ctrl-->>Api: 400 ProblemDetail
-    end
-    Api-->>Hook: result or typed error
-    Hook-->>UI: new state
+  UI->>Api: calculate(divide, [6, 3], java)
+  Api->>NX: POST /api/java/v1/calculate
+  NX->>J: POST /api/v1/calculate
+  alt java answers
+    J-->>NX: 200 {"result":"2"}
+    NX-->>Api: 200
+    Api-->>UI: "2"
+  else java unavailable (502 / timeout)
+    NX-->>Api: 502
+    Api->>BK: failover(java)
+    BK->>NX: GET /api/go/health
+    NX-->>BK: UP
+    BK-->>Api: go (selector hidden)
+    Api->>NX: POST /api/go/v1/calculate
+    NX->>G: POST /api/v1/calculate
+    G-->>NX: 200 {"result":"2"}
+    NX-->>Api: 200
+    Api-->>UI: "2"
   end
   UI-->>User: render display

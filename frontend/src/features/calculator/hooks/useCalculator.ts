@@ -1,4 +1,5 @@
-import { useEffect, useReducer, type Dispatch } from 'react';
+import { useEffect, useEffectEvent, useReducer, type Dispatch } from 'react';
+import type { Backend } from '../../../shared/backend/backend';
 import { calculate, CalculatorApiError } from '../api/calculatorApi';
 import {
   calculatorReducer,
@@ -7,7 +8,7 @@ import {
   type CalculatorState,
 } from '../model/calculatorReducer';
 import { messageForApiTitle } from '../model/errorMessages';
-import type { BinaryOperation } from '../model/types';
+import type { BinaryOperation, Operation } from '../model/types';
 
 const SYMBOLS: Record<BinaryOperation, string> = {
   add: '+',
@@ -74,6 +75,21 @@ function isEditableTarget(target: EventTarget | null): boolean {
   );
 }
 
+export interface UseCalculatorOptions {
+  /** Backend for the next request; changing it never re-sends the one in flight. */
+  backend: Backend;
+  /**
+   * Asked once when `failed` (the backend the request went to) is unavailable; resolves to the
+   * backend to retry on, or `null`.
+   */
+  failover: (failed: Backend) => Promise<Backend | null>;
+}
+
+/** Network error, client timeout or 5xx: worth trying the other backend. A 4xx never is. */
+function isUnavailable(error: unknown): boolean {
+  return error instanceof CalculatorApiError && error.retryable;
+}
+
 export interface UseCalculator {
   state: CalculatorState;
   dispatch: Dispatch<CalculatorAction>;
@@ -83,16 +99,37 @@ export interface UseCalculator {
   display: string;
 }
 
-export function useCalculator(): UseCalculator {
+export function useCalculator({ backend, failover }: UseCalculatorOptions): UseCalculator {
   const [state, dispatch] = useReducer(calculatorReducer, initialState);
   const { request } = state;
+
+  // An effect event reads the latest backend/failover without making them effect dependencies.
+  const send = useEffectEvent(
+    async (operation: Operation, operands: readonly string[], signal: AbortSignal) => {
+      try {
+        return await calculate(operation, operands, { backend, signal });
+      } catch (error) {
+        if (signal.aborted || !isUnavailable(error)) {
+          throw error;
+        }
+        const next = await failover(backend);
+        // Cleared or superseded while failing over: no retry.
+        signal.throwIfAborted();
+        if (next === null) {
+          throw error;
+        }
+        // At most one retry: a second failure is reported as is.
+        return await calculate(operation, operands, { backend: next, signal });
+      }
+    },
+  );
 
   useEffect(() => {
     if (request === null) {
       return;
     }
     const controller = new AbortController();
-    calculate(request.operation, request.operands, controller.signal).then(
+    send(request.operation, request.operands, controller.signal).then(
       (result) => {
         if (!controller.signal.aborted) {
           dispatch({ type: 'resolved', result });

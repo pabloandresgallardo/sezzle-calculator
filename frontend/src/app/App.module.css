@@ -1,4 +1,4 @@
-/* The toggle sits in its own row, so it can never overlap the calculator on short screens. */
+/* The header controls sit in their own row, so they can never overlap the calculator on short screens. */
 .app {
   display: grid;
   grid-template-rows: auto 1fr;
@@ -9,7 +9,11 @@
 
 .header {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
+  gap: 0.75rem;
+  min-width: 0;
 }
 
 .main {

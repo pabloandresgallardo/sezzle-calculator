@@ -1,21 +1,26 @@
 graph LR
   subgraph FE["Frontend — React 19 + Vite 8"]
     UI[Atomic UI] --> Hook[useCalculator]
+    Sel[BackendSelector] --> Back[useBackends]
     Hook --> Api[calculatorApi]
+    Back --> Api
   end
-  subgraph EDGE["Edge — Docker"]
-    Nginx[nginx :3000]
+  subgraph EDGE["Edge — nginx :3000"]
+    PJ["/api/java/*"]
+    PG["/api/go/*"]
   end
-  subgraph IN["Backend — Adapter in"]
-    Ctrl[CalculatorController]
-    Errors[ProblemDetail handler]
+  subgraph JAVA["backend-java :8090"]
+    JC[Controller] --> JS[CalculatorService]
+    JS --> JD[Operation enum]
   end
-  subgraph CORE["Backend — Hexagon core"]
-    Port[CalculateUseCase] --> Svc[CalculatorService]
-    Svc --> Op[Operation]
-    Op --> Rules[BigDecimal rules]
+  subgraph GO["backend-go :8091"]
+    GH[httpapi] --> GA[app.Calculate]
+    GA --> GD[domain + decimal]
   end
-  Api -->|POST /api/v1/calculate| Nginx
-  Nginx -->|proxy /api| Ctrl
-  Ctrl --> Port
-  Ctrl -.->|domain errors| Errors
+  subgraph CONTRACT["contract/ — run against Java, Go and both via nginx"]
+    PC[parity-cases.json] --- OA[openapi.json]
+  end
+  Api -->|default| PJ
+  Api -->|selected or failover| PG
+  PJ --> JC
+  PG --> GH

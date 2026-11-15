@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { displayExpression, expectValue } from './helpers';
+import { displayExpression, expectValue, openApp } from './helpers';
 
 const STORAGE_KEY = 'sezzle-calculator-theme';
 const html = (page: Page) => page.locator('html');
@@ -17,7 +17,7 @@ async function storedTheme(page: Page): Promise<string | null> {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/');
+  await openApp(page);
 });
 
 test('opens in dark mode with no stored preference', async ({ page }) => {

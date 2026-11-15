@@ -48,3 +48,12 @@ Fuente: intención de proyecto — 2026-11-15 · evidencia verificada — 2026-1
 
 - Un archivo por escenario: `tests/basic-operations.spec.ts`, `tests/errors.spec.ts`, `tests/edge-cases.spec.ts`.
 - Selectores por rol y nombre accesible (`getByRole`), no por clases CSS.
+
+## Backend Go (`backend-go/`)
+
+- `gofmt` y `go vet` limpios, verificados por `make lint-go` y en CI. Solo biblioteca estándar, sin dependencias externas salvo que un ADR diga lo contrario.
+- Mismo hexágono que Java: `internal/decimal` (aritmética decimal con semántica de BigDecimal), `internal/domain` (operandos, tabla de operaciones con `apply`/`arity`/`validate`, errores tipados con los mensajes exactos de Java), `internal/app` (pipeline de validación) e `internal/httpapi` (transporte). El dominio no importa `net/http`.
+- Los errores de dominio son tipos (`*OperandOutOfRangeError`, `*InvalidOperandError`, …) y se mapean a `title` solo en `httpapi`.
+- Sobre un valor recién parseado solo se usan `Precision`, `Scale`, `Signum`, `StripTrailingZeros` y `Cmp`; toda la aritmética corre sobre operandos ya normalizados (evita materializar `10^n` con exponentes enormes).
+- Tests de tabla con `t.Run`; los casos del contrato viven en `contract/parity-cases.json`, no se duplican en Go.
+- En máquinas con `GO111MODULE=off` los comandos se corren con `GO111MODULE=on` (el Makefile ya lo hace).
