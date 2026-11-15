@@ -1,6 +1,20 @@
 # Guardrails — sezzle-calculator
 
-Fuente: intención de proyecto — 2026-11-15
+Fuente: intención de proyecto — 2026-11-15 · evidencia verificada — 2026-11-15
+
+## Evidencia observada
+
+| Guardrail | Cómo se hace cumplir | Fuente |
+|-----------|----------------------|--------|
+| Lint obligatorio | `spotless:check` en `verify`; `npm run lint` en CI | `backend/pom.xml`, `.github/workflows/ci.yml` |
+| Cobertura ≥ 90% | `jacoco:check`; umbrales de Vitest | `backend/pom.xml`, `frontend/vite.config.ts` |
+| `.env` fuera del repo | ignorado | `.gitignore` |
+| Puertos configurables | `SERVER_PORT`, `VITE_PORT`, `BACKEND_PORT`, `WEB_PORT` | `application.yml`, `vite.config.ts`, `docker-compose.yml` |
+| Contrato estable con `title` exactos y orden de validación | `CalculatorControllerTest` (todas las filas de la spec) y `e2e/tests/api-contract.spec.ts` | ADR-002 |
+| BigDecimal en todo el cálculo; `result` como string | `Operation.apply`, `CalculationResult.formatted()` | `backend/.../domain/model/` |
+| Límites de operando y normalización (anti-DoS) | `Operand` + `OperandTest` (exponentes extremos, cero con exponente enorme con `@Timeout`) | `backend/.../domain/model/` |
+| Dominio sin Spring | sin imports de Spring ni Lombok en `domain/**` | `backend/.../domain/` |
+| ProblemDetail sin stack trace; `detail` en inglés y acotado | `ProblemDetailHandler` + tests | `backend/.../adapter/in/web/` |
 
 ## Blocking (sin esto no se integra)
 

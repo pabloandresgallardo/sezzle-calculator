@@ -1,6 +1,26 @@
 # Arquitectura — sezzle-calculator
 
-Fuente: intención de proyecto — 2026-11-15
+Fuente: intención de proyecto — 2026-11-15 · evidencia verificada — 2026-11-15
+
+## Evidencia observada
+
+Las secciones siguientes describen la arquitectura acordada en ADR-001. Esta tabla separa lo que ya existe de lo que está pendiente.
+
+| Elemento | Estado | Fuente |
+|----------|--------|--------|
+| Entry point Spring Boot | presente | `backend/src/main/java/com/sezzle/calculator/CalculatorApplication.java` |
+| Dominio: `Operation` (enum con `apply`, `fromCode`, `arity`), `Operand` (record que valida y normaliza), `CalculationResult` y 4 excepciones de dominio sobre `CalculationException` | implementado | `backend/.../domain/model/`, `backend/.../domain/exception/` |
+| Aplicación: puerto `CalculateUseCase` + `CalculateCommand`; `CalculatorService` aplica el orden de validación | implementado | `backend/.../application/` |
+| Adapter web: `CalculatorController` (`POST /api/v1/calculate`), DTOs (records), `ProblemDetailHandler` | implementado | `backend/.../adapter/in/web/` |
+| Config: `JacksonConfig` (estricto: sin conversión de tipos, campos desconocidos fallan), `OpenApiConfig` (título "Sezzle Calculator API", `v1`) | implementado | `backend/.../config/` |
+| Puerto `${SERVER_PORT:8090}`, actuator health, rutas de springdoc | configurado | `backend/src/main/resources/application.yml` |
+| Frontend: `App` → `CalculatorPanel` → `DisplayPanel` y `Keypad` → `Display` y `CalcButton` | implementado | `frontend/src/app/`, `frontend/src/features/calculator/{atoms,molecules,organisms}/` |
+| Modelo del frontend: `calculatorReducer` (máquina de estados pura), `limits`, `errorMessages`, `types` | implementado | `frontend/src/features/calculator/model/` |
+| `useCalculator` (efectos de API con `AbortController`, teclado y paste en `window`) y `calculatorApi` (fetch tipado) | implementado | `frontend/src/features/calculator/{hooks,api}/` |
+| `shared/` | vacío (`.gitkeep`) | `frontend/src/shared/` |
+| Vite en `:5180` con proxy de `/api` a `:8090` | configurado | `frontend/vite.config.ts` |
+| nginx con proxy de `/api/` a `backend:8090` | configurado | `frontend/nginx.conf` |
+| Stack Docker con healthchecks | configurado | `backend/Dockerfile`, `frontend/Dockerfile`, `docker-compose*.yml` |
 
 ## Visión
 

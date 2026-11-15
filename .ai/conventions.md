@@ -1,6 +1,23 @@
 # Convenciones — sezzle-calculator
 
-Fuente: intención de proyecto — 2026-11-15
+Fuente: intención de proyecto — 2026-11-15 · evidencia verificada — 2026-11-15
+
+## Evidencia observada
+
+| Convención | Fuente |
+|------------|--------|
+| Palantir Java Format + `removeUnusedImports` + `importOrder` (Spotless 3.11.0, `check` en la fase `verify`) | `backend/pom.xml` |
+| ESLint: `strictTypeChecked`, `react-hooks`, `react-refresh`, `eslint-config-prettier` | `frontend/eslint.config.js` |
+| Prettier: `singleQuote`, `trailingComma: all`, `printWidth: 100` | `frontend/.prettierrc` |
+| TypeScript `strict`, `noUncheckedIndexedAccess`, `verbatimModuleSyntax` | `frontend/tsconfig.json` |
+| Conventional Commits (`chore: …`) | `git log` |
+| Tests `*IT` en failsafe | `backend/pom.xml` (failsafe 3.6.1, con los includes por defecto) |
+| Records en dominio y DTOs (`Operand`, `CalculationResult`, `CalculateCommand`, `CalculationRequest`, `CalculationResponse`) | `backend/src/main/java/com/sezzle/calculator/**` |
+| Dominio sin Spring ni Lombok | `domain/**` (sin imports `org.springframework` ni `lombok`) |
+| Lombok `@RequiredArgsConstructor` en el controller; `lombok.config` con `addLombokGeneratedAnnotation` | `adapter/in/web/CalculatorController.java`, `backend/lombok.config` |
+| Lombok en `annotationProcessorPaths` (JDK 23+) y excluido del jar | `backend/pom.xml` |
+| Componentes en PascalCase con `.module.css` y `.test.tsx` al lado | `frontend/src/features/calculator/{atoms,molecules,organisms}/` |
+| Selectores E2E por rol y `aria-label` | `e2e/tests/helpers.ts` |
 
 ## Generales
 
@@ -12,7 +29,7 @@ Fuente: intención de proyecto — 2026-11-15
 ## Backend (Java 21)
 
 - Formato con **Palantir Java Format** vía Spotless 3.11.0. `make format` lo aplica y `make lint` lo verifica, y también corre en `mvn verify`.
-- Records para DTOs, comandos y value objects. Sin Lombok.
+- Records para DTOs, comandos y value objects. Lombok solo en beans de Spring (`@RequiredArgsConstructor`), nunca en `domain` (ADR-002). Sin MapStruct.
 - El dominio no importa `org.springframework.*`.
 - Errores de dominio como excepciones propias en `domain.exception`, que se traducen a ProblemDetail en `adapter.in.web`.
 - Nombres de tests: `*Test` para unitarios (surefire) y `*IT` para integración (failsafe).

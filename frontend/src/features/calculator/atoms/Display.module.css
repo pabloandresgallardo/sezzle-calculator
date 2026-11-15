@@ -1,0 +1,38 @@
+.display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  scrollbar-width: thin;
+}
+
+.small {
+  min-height: 1.5rem;
+  font-size: 1.125rem;
+  line-height: 1.5rem;
+  color: var(--color-muted);
+}
+
+.large {
+  min-height: 3.25rem;
+  font-size: 2.75rem;
+  line-height: 3.25rem;
+  font-weight: 300;
+}
+
+.small.compact {
+  font-size: 1rem;
+}
+
+.small.tiny {
+  font-size: 0.875rem;
+}
+
+.large.compact {
+  font-size: 2rem;
+}
+
+.large.tiny {
+  font-size: 1.5rem;
+}
