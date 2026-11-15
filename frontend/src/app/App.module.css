@@ -1,7 +1,20 @@
+/* The toggle sits in its own row, so it can never overlap the calculator on short screens. */
 .app {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 0.5rem;
+  min-height: 100dvh;
+  padding: 1rem;
+}
+
+.header {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.main {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100dvh;
-  padding: 1rem;
+  min-width: 0;
 }

@@ -52,3 +52,39 @@ test('physical keyboard: 8*7 Enter = 56', async ({ page }) => {
   await page.keyboard.press('Enter');
   await expectValue(page, '56');
 });
+
+test('2 xʸ 10 = 1024', async ({ page }) => {
+  await press(page, '2', 'power', '1', '0', 'equals');
+  await expectValue(page, '1024');
+});
+
+test('9 √ = 3 (immediate)', async ({ page }) => {
+  await press(page, '9', 'square root');
+  await expectValue(page, '3');
+});
+
+test('2 + 9 √ = 5', async ({ page }) => {
+  await press(page, '2', 'add', '9', 'square root', 'equals');
+  await expectValue(page, '5');
+});
+
+test('20 % 150 = 30', async ({ page }) => {
+  await press(page, '2', '0', 'percent', '1', '5', '0', 'equals');
+  await expectValue(page, '30');
+});
+
+test('keyboard: 2^8 Enter = 256', async ({ page }) => {
+  await page.keyboard.type('2^8');
+  await page.keyboard.press('Enter');
+  await expectValue(page, '256');
+});
+
+test('keyboard: 16@ = 4', async ({ page }) => {
+  await page.keyboard.type('16@');
+  await expectValue(page, '4');
+});
+
+test('2 √ = 1.4142135624', async ({ page }) => {
+  await press(page, '2', 'square root');
+  await expectValue(page, '1.4142135624');
+});

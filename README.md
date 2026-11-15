@@ -5,10 +5,13 @@ AI-ENGINEERING-MANAGED
 
 Full-stack calculator: a React + TypeScript SPA that delegates every arithmetic operation to a REST microservice (Java 21 + Spring Boot 4, hexagonal architecture).
 
-> **Status:** v1 implements `add`, `subtract`, `multiply` and `divide` end to end (UI → REST API → domain), built with TDD.
-> Planned for iteration 2: `power`, `sqrt`, `percentage`.
+> **Status:** all 7 operations work end to end (UI → REST API → domain), built with TDD: `add`, `subtract`, `multiply`, `divide`, plus the optional `power` (xʸ), `sqrt` (√) and `percentage` (%).
 
-The calculator works like a physical one: operations chain left to right (`2 + 3 × 4 = 20`), `±` (or `F9`) negates, and it can be driven entirely from the keyboard (`0-9`, `.`/`,`, `+ - * /`, `Enter`/`=`, `Esc`, `Backspace`, paste).
+The calculator works like a physical one: operations chain left to right (`2 + 3 × 4 = 20`, `2 xʸ 3 × 2 = 16`), `√` applies immediately to the number on screen (`2 + 9 √ =` → `5`), `%` means "a percent of b" (`20 % 150 =` → `30`), and `±` negates.
+
+- **Keypad:** 4 × 6, 22 buttons, all visible — no "more functions" menu. The 7 operation keys share one color; `C`, `⌫` and `±` share another; `=` spans two rows.
+- **Keyboard:** `0-9`, `.`/`,`, `+ - * /`, `^` or `y` (xʸ), `@` (√), `%`, `Enter`/`=`, `Esc`, `Backspace`, `F9` (±), paste. On layouts where `@`, `^` or `%` need AltGr or Option (e.g. Spanish), those combinations work too; other Ctrl/Alt/Cmd shortcuts are left to the browser.
+- **Theme:** dark by default; the ☀/☾ button at the top right switches to light and the choice is remembered in the browser.
 
 ## Getting started
 
@@ -51,7 +54,7 @@ e2e/        Playwright end-to-end suite against the dockerized stack
 
 ### API
 
-> Contract defined in ADR-001 and ADR-002. A future Go backend implements this exact contract.
+> Contract defined in ADR-001, ADR-002 and ADR-003. A future Go backend implements this exact contract.
 
 ```http
 POST /api/v1/calculate
@@ -70,21 +73,30 @@ Content-Type: application/json
 { "title": "Division by zero", "status": 400, "detail": "division by zero", "instance": "/api/v1/calculate" }
 ```
 
-- `operation`: `add` | `subtract` | `multiply` | `divide` — lowercase, exact match.
-- `operands`: exactly 2 **JSON numbers**. Each must have ≤ 15 significant digits, absolute value < 10^15 and ≤ 10 decimal places. These limits keep every number exactly representable in the browser and bound the cost of a request.
-- `result` is a **decimal string** computed with `BigDecimal`: `0.1 + 0.2` returns `"0.3"`, and there is no scientific notation (`1e15 × 1e15` returns `"1000000000000000000000000000000"`).
-- Division: scale 10, `HALF_EVEN`, trailing zeros stripped (`1 / 3` → `"0.3333333333"`, `6 / 3` → `"2"`).
+| `operation` | `operands` | Result |
+|-------------|------------|--------|
+| `add`, `subtract`, `multiply` | `[a, b]` | Exact |
+| `divide` | `[a, b]` | Scale 10, `HALF_EVEN` (`1 / 3` → `"0.3333333333"`) |
+| `power` | `[base, exponent]` | Exponent must be an integer in [−1000, 1000]; scale 10, `HALF_EVEN` (`2 ^ -3` → `"0.125"`); at most 100 integer digits |
+| `sqrt` | `[a]` | `a ≥ 0`; scale 10, `HALF_EVEN` (`√2` → `"1.4142135624"`) |
+| `percentage` | `[a, b]` | a % of b = `a × b / 100`, exact (`[20, 150]` → `"30"`) |
+
+- `operation` is lowercase, exact match.
+- `operands` are **JSON numbers**. Each must have ≤ 15 significant digits, absolute value < 10^15 and ≤ 10 decimal places. These limits keep every number exactly representable in the browser and bound the cost of a request; `power` additionally estimates the result size before computing, so `999999999999999 ^ 1000` is rejected without being calculated.
+- `result` is a **decimal string** computed with `BigDecimal`: `0.1 + 0.2` returns `"0.3"`, with no scientific notation and no trailing zeros.
 - Strict contract: unknown fields, strings as numbers (`"1"`) and non-string operations are rejected.
 
-Errors follow RFC 9457 (ProblemDetail). `type` is omitted, which is equivalent to `about:blank`. The `title` values are stable and part of the contract; `detail` is free English text. When a request breaks several rules, the first failing check wins: shape → operation → operand count → operand range → calculation.
+Errors follow RFC 9457 (ProblemDetail). `type` is omitted, which is equivalent to `about:blank`. The `title` values are stable and part of the contract; `detail` is free English text. When a request breaks several rules, the first failing check wins: shape → operation → operand count → operand range → operation-specific validity (`Invalid operand`, exponent range, `Result out of range`) → calculation.
 
 | `title` | Status | When |
 |---------|--------|------|
 | `Malformed request` | 400 | Invalid JSON, missing or `null` field, wrong type, unknown field |
 | `Unsupported operation` | 400 | Unknown `operation` (including `"ADD"`) |
-| `Invalid operand count` | 400 | Not exactly 2 operands |
-| `Operand out of range` | 400 | An operand breaks a limit (`detail` names it, e.g. `operands[1] has more than 10 decimal places`) |
-| `Division by zero` | 400 | Divisor is zero |
+| `Invalid operand count` | 400 | Wrong number of operands for the operation (1 for `sqrt`, 2 for the rest) |
+| `Operand out of range` | 400 | An operand breaks a limit, or a `power` exponent is outside [−1000, 1000] (`detail` names it, e.g. `operands[1] has more than 10 decimal places`) |
+| `Invalid operand` | 400 | `sqrt` of a negative number, or a non-integer `power` exponent |
+| `Result out of range` | 400 | A `power` result would exceed 100 integer digits |
+| `Division by zero` | 400 | Divisor is zero (including `0 ^ -1`) |
 | `Internal error` | 500 | Unexpected failure (no internals exposed) |
 
 Interactive docs: http://localhost:8090/swagger-ui.html (OpenAPI 3.1 at `/v3/api-docs`, titled "Sezzle Calculator API" `v1`) · Health: `GET /actuator/health`
@@ -93,13 +105,15 @@ Interactive docs: http://localhost:8090/swagger-ui.html (OpenAPI 3.1 at `/v3/api
 
 - **Hexagonal backend** — the domain is plain Java with no Spring imports, so it can be ported to Go behind the same contract.
 - **Single generic endpoint** — new operations extend an enum instead of adding routes; the contract stays stable across backend implementations.
+- **Strategy implemented with an enum** — each `Operation` constant carries its own `apply`, `arity` and `validate`, so adding `power`, `sqrt` and `percentage` meant three new constants and no new routes or `switch` statements.
 - **BigDecimal + string results** — exact decimal arithmetic end to end; JSON numbers would be coerced to IEEE-754 doubles in the browser.
 - **Operand limits enforced in both layers** — the domain `Operand` validates and normalizes every input, so a short request like `[1e999999999, 0.1]` or `[0e-999999, 1]` cannot force a huge `BigDecimal` computation. The UI applies the same limits while typing.
 - **Pure reducer state machine in the UI** — all calculator behavior (chaining, sign, paste, errors, limits) lives in a framework-free reducer that is unit tested without the DOM.
 - **Same-origin everywhere** — Vite (dev) and nginx (Docker) proxy `/api`, so no CORS configuration is needed.
 - **Feature-based + atomic UI** — features at the top level, atoms/molecules/organisms inside each feature.
+- **Theme via CSS variables** — every color is a token defined for dark and light; an inline script in `index.html` applies the saved theme before React mounts, so there is no flash on load.
 
-Full rationale and discarded alternatives: [ADR-001](.ai/decisions/ADR-001-stack-selection.md) (stack) and [ADR-002](.ai/decisions/ADR-002-operaciones-basicas-contrato-y-modelo.md) (basic operations: model, limits, strict contract).
+Full rationale and discarded alternatives: [ADR-001](.ai/decisions/ADR-001-stack-selection.md) (stack), [ADR-002](.ai/decisions/ADR-002-operaciones-basicas-contrato-y-modelo.md) (basic operations: model, limits, strict contract) and [ADR-003](.ai/decisions/ADR-003-operaciones-opcionales-strategy-y-teclado.md) (optional operations, 4×6 keypad, theme).
 
 ## Development
 

@@ -7,8 +7,16 @@ import java.util.List;
 
 @Schema(description = "Arithmetic operation request")
 public record CalculationRequest(
-        @Schema(description = "Lowercase operation code", example = "divide") @NotNull
+        @Schema(
+                description = "Lowercase operation code",
+                example = "divide",
+                allowableValues = {"add", "subtract", "multiply", "divide", "power", "sqrt", "percentage"})
+        @NotNull
         String operation,
 
-        @Schema(description = "Operands as JSON numbers", example = "[1, 3]") @NotNull
+        @Schema(
+                description =
+                        "Operands as JSON numbers; the count depends on the operation: 1 for `sqrt`, 2 for the rest",
+                example = "[1, 3]")
+        @NotNull
         List<@NotNull BigDecimal> operands) {}

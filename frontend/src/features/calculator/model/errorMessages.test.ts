@@ -8,6 +8,8 @@ describe('messageForApiTitle', () => {
     ['Unsupported operation', 'Invalid request'],
     ['Invalid operand count', 'Invalid request'],
     ['Malformed request', 'Invalid request'],
+    ['Invalid operand', 'Invalid input'],
+    ['Result out of range', 'Result too large'],
   ])('maps contractual title %j', (title, message) => {
     expect(messageForApiTitle(title)).toBe(message);
   });

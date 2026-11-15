@@ -43,12 +43,68 @@ test('add [1, 2, 3] -> Invalid operand count', async ({ request }) => {
   );
 });
 
-test('power [2, 3] -> Unsupported operation', async ({ request }) => {
+test('foo [2, 3] -> Unsupported operation', async ({ request }) => {
   await expectProblem(
-    await postJson(request, { operation: 'power', operands: [2, 3] }),
+    await postJson(request, { operation: 'foo', operands: [2, 3] }),
     'Unsupported operation',
   );
 });
+
+test('sqrt [-4] -> Invalid operand', async ({ request }) => {
+  await expectProblem(await postJson(request, { operation: 'sqrt', operands: [-4] }), 'Invalid operand');
+});
+
+test('power [2, 0.5] -> Invalid operand', async ({ request }) => {
+  await expectProblem(
+    await postJson(request, { operation: 'power', operands: [2, 0.5] }),
+    'Invalid operand',
+  );
+});
+
+test('power [2, 1001] -> Operand out of range', async ({ request }) => {
+  await expectProblem(
+    await postJson(request, { operation: 'power', operands: [2, 1001] }),
+    'Operand out of range',
+  );
+});
+
+test('power [10, 100] -> Result out of range', async ({ request }) => {
+  await expectProblem(
+    await postJson(request, { operation: 'power', operands: [10, 100] }),
+    'Result out of range',
+  );
+});
+
+test('power [0, -1] -> Division by zero', async ({ request }) => {
+  await expectProblem(
+    await postJson(request, { operation: 'power', operands: [0, -1] }),
+    'Division by zero',
+  );
+});
+
+test('sqrt [1, 2] -> Invalid operand count', async ({ request }) => {
+  await expectProblem(
+    await postJson(request, { operation: 'sqrt', operands: [1, 2] }),
+    'Invalid operand count',
+  );
+});
+
+test('sqrt [1e999999999] -> Operand out of range', async ({ request }) => {
+  const res = await postRaw(request, '{"operation":"sqrt","operands":[1e999999999]}');
+  await expectProblem(res, 'Operand out of range');
+});
+
+for (const [operation, operands, result] of [
+  ['power', [2, 10], '1024'],
+  ['sqrt', [2], '1.4142135624'],
+  ['percentage', [20, 150], '30'],
+] as const) {
+  test(`${operation} [${operands.join(', ')}] -> 200 "${result}"`, async ({ request }) => {
+    const res = await postJson(request, { operation, operands });
+    expect(res.status()).toBe(200);
+    expect(await res.json()).toEqual({ operation, result });
+  });
+}
 
 test('ADD [1, 2] -> Unsupported operation (case sensitive)', async ({ request }) => {
   await expectProblem(

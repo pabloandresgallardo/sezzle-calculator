@@ -30,6 +30,7 @@ public class CalculatorService implements CalculateUseCase {
                 throw e.withIndex(i);
             }
         }
-        return new CalculationResult(operation, operation.apply(operands.get(0), operands.get(1)));
+        operation.validate(operands);
+        return new CalculationResult(operation, operation.apply(operands));
     }
 }

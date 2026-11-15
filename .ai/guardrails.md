@@ -38,5 +38,6 @@ Fuente: intención de proyecto — 2026-11-15 · evidencia verificada — 2026-1
 
 - Preferir composición de atoms y molecules antes que componentes grandes.
 - Mantener la UI usable a 360 px de ancho.
-- Agregar las operaciones opcionales (`power`, `sqrt`, `percentage`) siguiendo las decisiones diferidas de ADR-001.
+- Para una operación nueva: agregar una constante en el enum `Operation`, con `apply`, `arity` y `validate` si hace falta. No agregar rutas ni `switch`.
+- Mantener la regla de colores del teclado: todas las operaciones con el estilo `operator`, y `C`, `⌫` y `±` con el estilo `action`. Los colores nuevos se definen como variables en los dos temas.
 - Cuando typescript-eslint soporte TypeScript 7, evaluar la actualización.

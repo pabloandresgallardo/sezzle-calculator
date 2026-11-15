@@ -18,3 +18,15 @@ test('pasting non-numeric text shows Invalid number', async ({ page }) => {
   await expect(page.getByRole('status')).toContainText('Invalid number');
   await expect(displayValue(page)).toHaveText('0');
 });
+
+test('4 +/- √ shows Invalid input', async ({ page }) => {
+  await press(page, '4', 'plus/minus', 'square root');
+  await expect(page.getByRole('status')).toContainText('Invalid input');
+});
+
+test('10 xʸ 100 = shows Result too large, then C resets to 0', async ({ page }) => {
+  await press(page, '1', '0', 'power', '1', '0', '0', 'equals');
+  await expect(page.getByRole('status')).toContainText('Result too large');
+  await press(page, 'clear');
+  await expectValue(page, '0');
+});

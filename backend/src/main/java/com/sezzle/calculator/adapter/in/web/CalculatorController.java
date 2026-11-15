@@ -35,10 +35,17 @@ public class CalculatorController {
                                     @Content(
                                             mediaType = MediaType.APPLICATION_JSON_VALUE,
                                             schema = @Schema(implementation = CalculationRequest.class),
-                                            examples =
-                                                    @ExampleObject(
-                                                            name = "divide",
-                                                            value = "{\"operation\":\"divide\",\"operands\":[1,3]}"))))
+                                            examples = {
+                                                @ExampleObject(
+                                                        name = "divide",
+                                                        value = "{\"operation\":\"divide\",\"operands\":[1,3]}"),
+                                                @ExampleObject(
+                                                        name = "sqrt",
+                                                        value = "{\"operation\":\"sqrt\",\"operands\":[2]}"),
+                                                @ExampleObject(
+                                                        name = "percentage",
+                                                        value = "{\"operation\":\"percentage\",\"operands\":[20,150]}")
+                                            })))
     @ApiResponse(
             responseCode = "200",
             description = "Operation result",
@@ -53,7 +60,7 @@ public class CalculatorController {
     @ApiResponse(
             responseCode = "400",
             description = "Malformed request, unsupported operation, invalid operand count,"
-                    + " operand out of range or division by zero",
+                    + " operand out of range, invalid operand, result out of range or division by zero",
             content =
                     @Content(
                             mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,

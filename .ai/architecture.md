@@ -60,7 +60,8 @@ Sin puertos de salida: el servicio no tiene historial ni persistencia en la v1.
 POST /api/v1/calculate
 Content-Type: application/json
 
-{ "operation": "add" | "subtract" | "multiply" | "divide", "operands": [number, number] }
+{ "operation": "add" | "subtract" | "multiply" | "divide" | "power" | "sqrt" | "percentage",
+  "operands": [number] (sqrt) | [number, number] (resto) }
 ```
 
 | Caso | Respuesta |
@@ -68,6 +69,10 @@ Content-Type: application/json
 | Éxito | `200 {"operation": "divide", "result": "2"}`: `result` es un **string** decimal |
 | Operación desconocida, cantidad de operandos inválida, número malformado | `400` ProblemDetail (RFC 9457) |
 | Divisor cero | `400` ProblemDetail, `title: "Division by zero"` |
+| `sqrt` de negativo o exponente no entero | `400` ProblemDetail, `title: "Invalid operand"` |
+| Resultado de `power` con más de 100 dígitos enteros | `400` ProblemDetail, `title: "Result out of range"` |
+
+Reglas de `power`, `sqrt` y `percentage`, orden de validación completo y cota de costo de `power`: ADR-003 y `.ai/docs/specs/2026-11-15-optional-operations.md`.
 
 Reglas numéricas:
 - Todo se calcula con `BigDecimal`. `result` viaja como string para que JavaScript no lo pase a double y pierda precisión.
@@ -91,8 +96,20 @@ src/
   test/setup.ts
 ```
 
-- Estilos con CSS Modules, uno por componente.
-- Interacción con teclado en pantalla y teclado físico: `Enter` equivale a `=` y `Esc` a `C`. El display acepta escribir y pegar texto, con validación de números mal formados en el cliente.
+- Estilos con CSS Modules, uno por componente, y todos los colores como variables CSS por tema (`:root[data-theme="dark"|"light"]` en `src/app/global.css`).
+- **Teclado 4×6, 22 botones**: `C ⌫ % ÷ / xʸ √ ± × / 7 8 9 − / 4 5 6 + / 1 2 3 = / 0 .`. `=` ocupa dos filas y `0` dos columnas.
+  - Las 7 operaciones comparten el estilo `operator`.
+  - `C`, `⌫` y `±` comparten el estilo `action`.
+- Interacción con teclado en pantalla y teclado físico:
+  - `Enter` equivale a `=` y `Esc` a `C`.
+  - `@` es √; `^` e `y`/`Y` son xʸ; `%` es %.
+  - `@`, `^` y `%` también se aceptan con AltGr u Option.
+  - El display acepta escribir y pegar texto, con validación de números mal formados en el cliente.
+- `√` es unaria e inmediata (`unaryOperator` en el reducer); `xʸ` y `%` son binarias.
+- **Tema:** `src/shared/theme/` (`theme.ts`, `useTheme.ts`, `ThemeToggle`).
+  - Arranca en oscuro por defecto.
+  - La elección se guarda en `localStorage` con la clave `sezzle-calculator-theme`.
+  - Un script inline en `index.html` aplica el tema antes de que monte React.
 
 ## Red y despliegue
 
@@ -104,6 +121,7 @@ src/
 
 Front y back comparten origen en todos los entornos, así que **no se configura CORS**.
 
-## Alcance diferido
+## Historial de alcance
 
-`power`, `sqrt` y `percentage` se agregan en una etapa posterior. Las decisiones ya tomadas están en ADR-001.
+- **Iteración 1** (ADR-002): `add`, `subtract`, `multiply` y `divide`.
+- **Iteración 2** (ADR-003): `power`, `sqrt` y `percentage`, teclado 4×6 y tema oscuro/claro.

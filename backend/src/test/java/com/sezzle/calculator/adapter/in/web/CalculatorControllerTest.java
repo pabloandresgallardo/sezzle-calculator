@@ -49,7 +49,10 @@ class CalculatorControllerTest {
     static Stream<Arguments> successRows() {
         return Stream.of(
                 Arguments.of("{\"operation\":\"add\",\"operands\":[0.1,0.2]}", "add", "0.3"),
-                Arguments.of("{\"operation\":\"divide\",\"operands\":[1,3]}", "divide", "0.3333333333"));
+                Arguments.of("{\"operation\":\"divide\",\"operands\":[1,3]}", "divide", "0.3333333333"),
+                Arguments.of("{\"operation\":\"power\",\"operands\":[2,64]}", "power", "18446744073709551616"),
+                Arguments.of("{\"operation\":\"sqrt\",\"operands\":[2]}", "sqrt", "1.4142135624"),
+                Arguments.of("{\"operation\":\"percentage\",\"operands\":[20,150]}", "percentage", "30"));
     }
 
     @Timeout(value = 5, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
@@ -77,7 +80,16 @@ class CalculatorControllerTest {
     static Stream<Arguments> errorRows() {
         return Stream.of(
                 Arguments.of("{\"operation\":\"divide\",\"operands\":[5,0]}", "Division by zero"),
-                Arguments.of("{\"operation\":\"power\",\"operands\":[2,3]}", "Unsupported operation"),
+                Arguments.of("{\"operation\":\"sqrt\",\"operands\":[-4]}", "Invalid operand"),
+                Arguments.of("{\"operation\":\"power\",\"operands\":[2,0.5]}", "Invalid operand"),
+                Arguments.of("{\"operation\":\"power\",\"operands\":[2,1001]}", "Operand out of range"),
+                Arguments.of("{\"operation\":\"power\",\"operands\":[10,100]}", "Result out of range"),
+                Arguments.of("{\"operation\":\"power\",\"operands\":[0,-1]}", "Division by zero"),
+                Arguments.of("{\"operation\":\"sqrt\",\"operands\":[]}", "Invalid operand count"),
+                Arguments.of("{\"operation\":\"sqrt\",\"operands\":[1,2]}", "Invalid operand count"),
+                Arguments.of("{\"operation\":\"sqrt\",\"operands\":[1e999999999]}", "Operand out of range"),
+                Arguments.of("{\"operation\":\"PERCENTAGE\",\"operands\":[20,150]}", "Unsupported operation"),
+                Arguments.of("{\"operation\":\"modulo\",\"operands\":[2,3]}", "Unsupported operation"),
                 Arguments.of("{\"operation\":\"ADD\",\"operands\":[1,2]}", "Unsupported operation"),
                 Arguments.of("{\"operation\":\"add\",\"operands\":[1,2,3]}", "Invalid operand count"),
                 Arguments.of("{\"operation\":\"add\",\"operands\":[1234567890123456,1]}", "Operand out of range"),

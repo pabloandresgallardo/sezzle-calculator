@@ -7,6 +7,8 @@ export interface CalcButtonProps {
   onPress: () => void;
   variant: 'digit' | 'operator' | 'action' | 'equals';
   wide?: boolean;
+  /** Spans two grid rows (the `=` key). */
+  tall?: boolean;
   disabled?: boolean;
 }
 
@@ -21,9 +23,12 @@ export function CalcButton({
   onPress,
   variant,
   wide = false,
+  tall = false,
   disabled = false,
 }: CalcButtonProps) {
-  const className = [styles.button, styles[variant], wide && styles.wide].filter(Boolean).join(' ');
+  const className = [styles.button, styles[variant], wide && styles.wide, tall && styles.tall]
+    .filter(Boolean)
+    .join(' ');
   return (
     <button
       type="button"

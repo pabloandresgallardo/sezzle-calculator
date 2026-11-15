@@ -1,19 +1,49 @@
-:root {
+/*
+ * Theme tokens. Dark is the default (index.html ships data-theme="dark" and the inline script
+ * only switches to a stored "light"); the OS colour-scheme preference is deliberately ignored.
+ * Contrast pairs are checked by src/shared/theme/themeTokens.test.ts.
+ */
+:root[data-theme='dark'] {
+  --color-bg: #0f1218;
+  --color-surface: #181c24;
+  --color-screen: #10141b;
+  --color-text: #eef1f5;
+  --color-muted: #9aa3b2;
+  --color-border: #5b6474;
+  --color-key: #262c37;
+  --color-action: #3a4250;
+  --color-operator: #1e2b4a;
+  --color-operator-text: #93b4ff;
+  --color-accent: #2563eb;
+  --color-accent-text: #ffffff;
+  --color-error: #f87171;
+  --color-focus: #f59e0b;
+  --color-shadow: #00000066;
+
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
   --color-bg: #f1f3f6;
   --color-surface: #ffffff;
   --color-screen: #eef1f5;
   --color-text: #1b1f27;
-  --color-muted: #5c6575;
+  --color-muted: #545d6c;
+  --color-border: #6b7280;
   --color-key: #e4e8ee;
-  --color-action: #d3d9e2;
+  --color-action: #cdd3dc;
   --color-operator: #dbe6ff;
   --color-operator-text: #1d4ed8;
-  --color-accent: #2563eb;
+  --color-accent: #1d4ed8;
   --color-accent-text: #ffffff;
   --color-error: #b91c1c;
-  --color-focus: #f59e0b;
+  --color-focus: #b45309;
+  --color-shadow: #1b1f2729;
 
-  color-scheme: light dark;
+  color-scheme: light;
+}
+
+:root {
   font-family:
     system-ui,
     -apple-system,
@@ -23,22 +53,6 @@
   color: var(--color-text);
   background: var(--color-bg);
   -webkit-text-size-adjust: 100%;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #0f1218;
-    --color-surface: #181c24;
-    --color-screen: #10141b;
-    --color-text: #eef1f5;
-    --color-muted: #9aa3b2;
-    --color-key: #262c37;
-    --color-action: #323947;
-    --color-operator: #1e2b4a;
-    --color-operator-text: #93b4ff;
-    --color-accent: #3b82f6;
-    --color-error: #f87171;
-  }
 }
 
 *,
@@ -56,5 +70,6 @@ body {
 body {
   min-width: 320px;
   min-height: 100dvh;
+  color: var(--color-text);
   background: var(--color-bg);
 }

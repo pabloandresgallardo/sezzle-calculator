@@ -4,7 +4,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Arithmetic operation result")
 public record CalculationResponse(
-        @Schema(description = "Operation that was performed", example = "divide")
+        @Schema(
+                description = "Operation that was performed",
+                example = "divide",
+                allowableValues = {"add", "subtract", "multiply", "divide", "power", "sqrt", "percentage"})
         String operation,
 
         @Schema(description = "Plain decimal string, no exponent or trailing zeros", example = "0.3333333333")

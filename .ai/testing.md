@@ -11,11 +11,11 @@ Fuente: intención de proyecto — 2026-11-15 · evidencia verificada — 2026-1
 | Vitest: jsdom, `src/test/setup.ts`, `passWithNoTests`, umbrales de 90 | configurado | `frontend/vite.config.ts` |
 | Playwright: chromium, firefox, webkit, Pixel 7 | configurado | `e2e/playwright.config.ts` |
 | E2E en puerto efímero con proyecto `sezzle-e2e` | configurado | `Makefile`, `docker-compose.test.yml` |
-| Tests de backend | unitarios: `OperandTest`, `OperationTest`, `CalculationResultTest`, `CalculatorServiceTest`, `ProblemDetailHandlerTest`; slice: `CalculatorControllerTest`; integración: `CalculatorApiIT` (RANDOM_PORT) | `backend/src/test/java/` |
-| Tests de frontend | modelo (reducer, límites, mensajes), API (MSW), hook, atoms, molecules, organism y App | `frontend/src/**/*.test.{ts,tsx}` |
-| Tests E2E | `ui-operations`, `ui-errors`, `ui-edge-cases` (incluye layout a 360 px con bounding boxes) y `api-contract` (solo chromium) | `e2e/tests/` |
+| Tests de backend | unitarios: `OperandTest`, `OperationTest`, `OptionalOperationsTest`, `PowerBoundsTest`, `CalculationResultTest`, `CalculatorServiceTest`, `ProblemDetailHandlerTest`; slice: `CalculatorControllerTest`; integración: `CalculatorApiIT` (RANDOM_PORT) | `backend/src/test/java/` |
+| Tests de frontend | modelo (reducer, límites, mensajes), API (MSW), hook, atoms, molecules, organism y App; tema (`theme`, `ThemeToggle`, script sin parpadeo, tokens y contraste AA) | `frontend/src/**/*.test.{ts,tsx}` |
+| Tests E2E | `ui-operations`, `ui-errors`, `ui-edge-cases` (incluye layout a 360 px con 22 botones y bounding boxes), `ui-theme` y `api-contract` (solo chromium) | `e2e/tests/` |
 | WebKit local | La build WebKit de Playwright 1.65 se cae en macOS 14.3 (`Bus error: 10`). Se verifica en Linux: CI o la imagen `mcr.microsoft.com/playwright:v1.65.1-noble` | — |
-| Última verificación (feat/basic-operations) | validación pendiente (verificación final de dev-skill) | — |
+| Última verificación (feat/optional-operations, 2026-11-15) | backend `mvn verify`: 137 unitarios + 11 IT, gate JaCoCo cumplido · frontend: 275 tests, cobertura 98.31/97.22/100/99.14, lint y build · E2E: chromium/firefox/mobile 118 ✓, webkit (Linux) 32 ✓ · integración vía nginx: 16 flujos | local + contenedor `mcr.microsoft.com/playwright:v1.65.1-noble` |
 
 ## Estrategia
 
@@ -45,6 +45,9 @@ Pirámide:
 | Error | División por cero; operación desconocida; 1 o 3 operandos; operando no numérico; body vacío o JSON inválido |
 | Bordes | División periódica (`1 / 3 = 0.3333333333`); ceros finales (`6 / 3 = 2`); números muy grandes y muy chicos; `-0`; notación científica |
 | UI | Número mal formado (`1..2`); pegar texto inválido; `Enter` / `Esc`; error del backend visible y recuperable; layout mobile |
+| Iteración 2: éxito | `2 ^ 64`; `2 ^ -3 = 0.125`; `√2 = 1.4142135624`; `√16 = 4`; `20 % de 150 = 30`; `2 + 9 √ = 5`; encadenar después de `xʸ` |
+| Iteración 2: error y bordes | `√(-4)` → `Invalid operand`; exponente `0.5` o `1000.5` → `Invalid operand`; exponente `1001` → `Operand out of range`; `10 ^ 100` → `Result out of range` (`10 ^ 99` se acepta); `0 ^ -1` → `Division by zero`; `999999999999999 ^ 1000` se rechaza sin calcular; aridad de `sqrt` |
+| Tema | Abre en oscuro; alterna a claro; persiste al recargar; storage bloqueado o inválido → oscuro; `Enter` sobre el toggle no dispara `=` |
 
 ## E2E
 
