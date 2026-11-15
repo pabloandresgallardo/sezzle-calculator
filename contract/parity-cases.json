@@ -1,0 +1,1357 @@
+[
+  {
+    "name": "add 0.1+0.2",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[0.1,0.2]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"add\",\"result\":\"0.3\"}"
+    }
+  },
+  {
+    "name": "add exponent forms",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[1E+3,1e-3]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"add\",\"result\":\"1000.001\"}"
+    }
+  },
+  {
+    "name": "subtract negative result",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"subtract\",\"operands\":[5,8]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"subtract\",\"result\":\"-3\"}"
+    }
+  },
+  {
+    "name": "multiply 30 digits",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"multiply\",\"operands\":[999999999999999,999999999999999]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"multiply\",\"result\":\"999999999999998000000000000001\"}"
+    }
+  },
+  {
+    "name": "multiply negative zero",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"multiply\",\"operands\":[-2.5,0]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"multiply\",\"result\":\"0\"}"
+    }
+  },
+  {
+    "name": "divide 1/3",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"divide\",\"operands\":[1,3]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"divide\",\"result\":\"0.3333333333\"}"
+    }
+  },
+  {
+    "name": "divide 2/3 rounds",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"divide\",\"operands\":[2,3]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"divide\",\"result\":\"0.6666666667\"}"
+    }
+  },
+  {
+    "name": "divide rounds to zero",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"divide\",\"operands\":[0.0000000001,3]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"divide\",\"result\":\"0\"}"
+    }
+  },
+  {
+    "name": "divide negative",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"divide\",\"operands\":[-1,3]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"divide\",\"result\":\"-0.3333333333\"}"
+    }
+  },
+  {
+    "name": "divide half-even tie 1.5 -> 2",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"divide\",\"operands\":[3,20000000000]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"divide\",\"result\":\"0.0000000002\"}"
+    }
+  },
+  {
+    "name": "divide half-even tie 2.5 -> 2",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"divide\",\"operands\":[5,20000000000]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"divide\",\"result\":\"0.0000000002\"}"
+    }
+  },
+  {
+    "name": "divide negative tiny -> 0 (no -0)",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"divide\",\"operands\":[-1,20000000000]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"divide\",\"result\":\"0\"}"
+    }
+  },
+  {
+    "name": "sqrt 2",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"sqrt\",\"operands\":[2]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"sqrt\",\"result\":\"1.4142135624\"}"
+    }
+  },
+  {
+    "name": "sqrt 1e-10",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"sqrt\",\"operands\":[0.0000000001]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"sqrt\",\"result\":\"0.00001\"}"
+    }
+  },
+  {
+    "name": "sqrt max",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"sqrt\",\"operands\":[999999999999999]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"sqrt\",\"result\":\"31622776.6016837775\"}"
+    }
+  },
+  {
+    "name": "sqrt -0",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"sqrt\",\"operands\":[-0]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"sqrt\",\"result\":\"0\"}"
+    }
+  },
+  {
+    "name": "power 2^64",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"power\",\"operands\":[2,64]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"power\",\"result\":\"18446744073709551616\"}"
+    }
+  },
+  {
+    "name": "power 0.5^11 half-even tie",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"power\",\"operands\":[0.5,11]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"power\",\"result\":\"0.0004882812\"}"
+    }
+  },
+  {
+    "name": "power -2^-3",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"power\",\"operands\":[-2,-3]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"power\",\"result\":\"-0.125\"}"
+    }
+  },
+  {
+    "name": "power 0^0",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"power\",\"operands\":[0,0]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"power\",\"result\":\"1\"}"
+    }
+  },
+  {
+    "name": "power exponent 2.0 is integer",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"power\",\"operands\":[2,2.0]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"power\",\"result\":\"4\"}"
+    }
+  },
+  {
+    "name": "power 10^99 (100 int digits ok)",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"power\",\"operands\":[10,99]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"power\",\"result\":\"1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\"}"
+    }
+  },
+  {
+    "name": "power 9.9999999999^100 (L<100, 100 int digits)",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"power\",\"operands\":[9.9999999999,100]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"power\",\"result\":\"9999999990000000004949999998383000000392122499924712480011920523998399243920186087894280977681917731.0309455024\"}"
+    }
+  },
+  {
+    "name": "power 3^-1000 short-circuit 0",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"power\",\"operands\":[3,-1000]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"power\",\"result\":\"0\"}"
+    }
+  },
+  {
+    "name": "power 10^-11 (L=-11 computed, rounds 0)",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"power\",\"operands\":[10,-11]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"power\",\"result\":\"0\"}"
+    }
+  },
+  {
+    "name": "power 2^-34 rounds up",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"power\",\"operands\":[2,-34]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"power\",\"result\":\"0.0000000001\"}"
+    }
+  },
+  {
+    "name": "power 1.0000000001^1000",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"power\",\"operands\":[1.0000000001,1000]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"power\",\"result\":\"1.0000001\"}"
+    }
+  },
+  {
+    "name": "percentage 20 of 150",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"percentage\",\"operands\":[20,150]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"percentage\",\"result\":\"30\"}"
+    }
+  },
+  {
+    "name": "percentage tiny exact 22 decimals",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"percentage\",\"operands\":[-0.0000000001,0.0000000001]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"percentage\",\"result\":\"-0.0000000000000000000001\"}"
+    }
+  },
+  {
+    "name": "percentage large",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"percentage\",\"operands\":[999999999999999,999999999999999]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"percentage\",\"result\":\"9999999999999980000000000000.01\"}"
+    }
+  },
+  {
+    "name": "operand 1e999999999 magnitude",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[1e999999999,0.1]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"operands[0] absolute value must be less than 10^15\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Operand out of range\"}"
+    }
+  },
+  {
+    "name": "operand 11 decimals",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[0.12345678901,1]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"operands[0] has more than 10 decimal places\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Operand out of range\"}"
+    }
+  },
+  {
+    "name": "operand 16 sig digits",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[999999999999999.9,1]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"operands[0] has more than 15 significant digits\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Operand out of range\"}"
+    }
+  },
+  {
+    "name": "operand 1e15 boundary",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[1,1e15]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"operands[1] absolute value must be less than 10^15\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Operand out of range\"}"
+    }
+  },
+  {
+    "name": "operand 0e-999999999 ok",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[0e-999999999,1]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"add\",\"result\":\"1\"}"
+    }
+  },
+  {
+    "name": "operand order idx0 first",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[1e999999999,1e-999999999]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"operands[0] absolute value must be less than 10^15\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Operand out of range\"}"
+    }
+  },
+  {
+    "name": "operand jackson max int digits 1000",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,1]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"operands[0] absolute value must be less than 10^15\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Operand out of range\"}"
+    }
+  },
+  {
+    "name": "operand jackson int digits 1001",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,1]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"Request body is not valid JSON or does not match the expected shape\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Malformed request\"}"
+    }
+  },
+  {
+    "name": "operand jackson fp digits 1000",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[1.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,1]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"add\",\"result\":\"2\"}"
+    }
+  },
+  {
+    "name": "operand jackson fp digits 1001",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[1.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,1]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"Request body is not valid JSON or does not match the expected shape\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Malformed request\"}"
+    }
+  },
+  {
+    "name": "operand scale overflow",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[1e-2147483648,1]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"Request body is not valid JSON or does not match the expected shape\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Malformed request\"}"
+    }
+  },
+  {
+    "name": "operand exponent beyond int but scale fits",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[0.1e2147483648,1]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"operands[0] absolute value must be less than 10^15\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Operand out of range\"}"
+    }
+  },
+  {
+    "name": "unsupported uppercase",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"ADD\",\"operands\":[1,2]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"unsupported operation: ADD\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Unsupported operation\"}"
+    }
+  },
+  {
+    "name": "unsupported empty",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"\",\"operands\":[1,2]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"unsupported operation: \",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Unsupported operation\"}"
+    }
+  },
+  {
+    "name": "unsupported truncated 33",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"operands\":[1,2]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"unsupported operation: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\u2026\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Unsupported operation\"}"
+    }
+  },
+  {
+    "name": "unsupported html chars not escaped",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"<b>&\",\"operands\":[1,2]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"unsupported operation: <b>&\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Unsupported operation\"}"
+    }
+  },
+  {
+    "name": "unsupported before count",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"xxx\",\"operands\":[1e999999999]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"unsupported operation: xxx\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Unsupported operation\"}"
+    }
+  },
+  {
+    "name": "count add 3",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[1,2,3]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"add requires 2 operands, got 3\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Invalid operand count\"}"
+    }
+  },
+  {
+    "name": "count sqrt 2",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"sqrt\",\"operands\":[1,2]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"sqrt requires 1 operand, got 2\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Invalid operand count\"}"
+    }
+  },
+  {
+    "name": "range before div zero",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"divide\",\"operands\":[1e999999999,0]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"operands[0] absolute value must be less than 10^15\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Operand out of range\"}"
+    }
+  },
+  {
+    "name": "division by zero",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"divide\",\"operands\":[5,0]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"division by zero\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Division by zero\"}"
+    }
+  },
+  {
+    "name": "sqrt negative",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"sqrt\",\"operands\":[-4]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"operands[0] must not be negative\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Invalid operand\"}"
+    }
+  },
+  {
+    "name": "power non-integer before range",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"power\",\"operands\":[2,1000.5]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"operands[1] must be an integer\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Invalid operand\"}"
+    }
+  },
+  {
+    "name": "power exponent > 1000",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"power\",\"operands\":[2,1001]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"operands[1] must be between -1000 and 1000\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Operand out of range\"}"
+    }
+  },
+  {
+    "name": "power 10^100 exact check",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"power\",\"operands\":[10,100]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"result would exceed 100 integer digits\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Result out of range\"}"
+    }
+  },
+  {
+    "name": "power -10^101 (L=101 computed)",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"power\",\"operands\":[-10,101]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"result would exceed 100 integer digits\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Result out of range\"}"
+    }
+  },
+  {
+    "name": "power estimate too large",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"power\",\"operands\":[999999999999999,1000]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"result would exceed 100 integer digits\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Result out of range\"}"
+    }
+  },
+  {
+    "name": "power 0^-1 division by zero",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"power\",\"operands\":[0,-1]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"division by zero\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Division by zero\"}"
+    }
+  },
+  {
+    "name": "malformed string operand",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[\"1\",2]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"Request body is not valid JSON or does not match the expected shape\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Malformed request\"}"
+    }
+  },
+  {
+    "name": "malformed unknown field",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[1,2],\"foo\":1}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"Request body is not valid JSON or does not match the expected shape\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Malformed request\"}"
+    }
+  },
+  {
+    "name": "malformed broken json",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[1,2"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"Request body is not valid JSON or does not match the expected shape\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Malformed request\"}"
+    }
+  },
+  {
+    "name": "malformed empty body",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": ""
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"Request body is not valid JSON or does not match the expected shape\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Malformed request\"}"
+    }
+  },
+  {
+    "name": "malformed trailing tokens",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[1,2]}{}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"Request body is not valid JSON or does not match the expected shape\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Malformed request\"}"
+    }
+  },
+  {
+    "name": "malformed leading zero",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[01,2]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"Request body is not valid JSON or does not match the expected shape\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Malformed request\"}"
+    }
+  },
+  {
+    "name": "malformed both missing (sorted, joined)",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"operands must not be null; operation must not be null\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Malformed request\"}"
+    }
+  },
+  {
+    "name": "malformed null operand beats unknown op",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"nope\",\"operands\":[null]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"operands[0] must not be null\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Malformed request\"}"
+    }
+  },
+  {
+    "name": "malformed nulls sorted lexicographically",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[1,1,null,1,1,1,1,1,1,1,null]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"operands[10] must not be null; operands[2] must not be null\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Malformed request\"}"
+    }
+  },
+  {
+    "name": "duplicate key last wins",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"subtract\",\"operation\":\"add\",\"operands\":[1,2]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"add\",\"result\":\"3\"}"
+    }
+  },
+  {
+    "name": "empty-string operand coerced to null",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[\"\",1]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"operands[0] must not be null\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Malformed request\"}"
+    }
+  },
+  {
+    "name": "case-variant key is unknown",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"Operation\":\"add\",\"operands\":[1,2]}"
+    },
+    "expected": {
+      "status": 400,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"Request body is not valid JSON or does not match the expected shape\",\"instance\":\"/api/v1/calculate\",\"status\":400,\"title\":\"Malformed request\"}"
+    }
+  },
+  {
+    "name": "BOM accepted",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "\ufeff{\"operation\":\"add\",\"operands\":[1,2]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"add\",\"result\":\"3\"}"
+    }
+  },
+  {
+    "name": "415 text/plain",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "text/plain"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[1,2]}"
+    },
+    "expected": {
+      "status": 415,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"Content-Type 'text/plain' is not supported.\",\"instance\":\"/api/v1/calculate\",\"status\":415,\"title\":\"Unsupported Media Type\"}"
+    }
+  },
+  {
+    "name": "415 missing content-type",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {},
+      "body": "{\"operation\":\"add\",\"operands\":[1,2]}"
+    },
+    "expected": {
+      "status": 415,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"Content-Type 'null' is not supported.\",\"instance\":\"/api/v1/calculate\",\"status\":415,\"title\":\"Unsupported Media Type\"}"
+    }
+  },
+  {
+    "name": "charset param accepted",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json;charset=UTF-8"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[1,2]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"add\",\"result\":\"3\"}"
+    }
+  },
+  {
+    "name": "406 accept text/plain",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json",
+        "Accept": "text/plain"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[1,2]}"
+    },
+    "expected": {
+      "status": 406,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"Acceptable representations: [application/json].\",\"instance\":\"/api/v1/calculate\",\"status\":406,\"title\":\"Not Acceptable\"}"
+    }
+  },
+  {
+    "name": "406 accept problem+json",
+    "viaProxy": true,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate",
+      "headers": {
+        "Content-Type": "application/json",
+        "Accept": "application/problem+json"
+      },
+      "body": "{\"operation\":\"divide\",\"operands\":[1,0]}"
+    },
+    "expected": {
+      "status": 406,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"Acceptable representations: [application/json].\",\"instance\":\"/api/v1/calculate\",\"status\":406,\"title\":\"Not Acceptable\"}"
+    }
+  },
+  {
+    "name": "405 GET",
+    "viaProxy": true,
+    "request": {
+      "method": "GET",
+      "path": "/api/v1/calculate",
+      "headers": {}
+    },
+    "expected": {
+      "status": 405,
+      "contentType": "application/problem+json",
+      "allow": "POST",
+      "rawBody": "{\"detail\":\"Method 'GET' is not supported.\",\"instance\":\"/api/v1/calculate\",\"status\":405,\"title\":\"Method Not Allowed\"}"
+    }
+  },
+  {
+    "name": "404 trailing slash",
+    "viaProxy": false,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate/",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[1,2]}"
+    },
+    "expected": {
+      "status": 404,
+      "contentType": "application/problem+json",
+      "rawBody": "{\"detail\":\"No static resource api/v1/calculate.\",\"instance\":\"/api/v1/calculate/\",\"status\":404,\"title\":\"Not Found\"}"
+    }
+  },
+  {
+    "name": "query string ignored",
+    "viaProxy": false,
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/calculate?operation=subtract",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": "{\"operation\":\"add\",\"operands\":[1,2]}"
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/json",
+      "rawBody": "{\"operation\":\"add\",\"result\":\"3\"}"
+    }
+  },
+  {
+    "name": "health",
+    "viaProxy": true,
+    "request": {
+      "method": "GET",
+      "path": "/actuator/health",
+      "headers": {}
+    },
+    "expected": {
+      "status": 200,
+      "contentType": "application/vnd.spring-boot.actuator.v3+json",
+      "rawBody": "{\"groups\":[\"liveness\",\"readiness\"],\"status\":\"UP\"}"
+    }
+  }
+]

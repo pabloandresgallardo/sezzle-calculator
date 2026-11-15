@@ -1,8 +1,8 @@
 import { test } from '@playwright/test';
-import { expectValue, press } from './helpers';
+import { expectValue, openApp, press } from './helpers';
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/');
+  await openApp(page);
 });
 
 test('7 + 5 = 12', async ({ page }) => {

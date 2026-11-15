@@ -13,9 +13,11 @@ Fuente: intención de proyecto — 2026-11-15 · evidencia verificada — 2026-1
 | E2E en puerto efímero con proyecto `sezzle-e2e` | configurado | `Makefile`, `docker-compose.test.yml` |
 | Tests de backend | unitarios: `OperandTest`, `OperationTest`, `OptionalOperationsTest`, `PowerBoundsTest`, `CalculationResultTest`, `CalculatorServiceTest`, `ProblemDetailHandlerTest`; slice: `CalculatorControllerTest`; integración: `CalculatorApiIT` (RANDOM_PORT) | `backend/src/test/java/` |
 | Tests de frontend | modelo (reducer, límites, mensajes), API (MSW), hook, atoms, molecules, organism y App; tema (`theme`, `ThemeToggle`, script sin parpadeo, tokens y contraste AA) | `frontend/src/**/*.test.{ts,tsx}` |
-| Tests E2E | `ui-operations`, `ui-errors`, `ui-edge-cases` (incluye layout a 360 px con 22 botones y bounding boxes), `ui-theme` y `api-contract` (solo chromium) | `e2e/tests/` |
+| Tests E2E | `ui-operations`, `ui-errors`, `ui-edge-cases` (incluye layout a 360 px con 22 botones y bounding boxes), `ui-theme`, `api-contract` (solo chromium), `parity` (Java == Go == esperado, 78 casos vía nginx, solo chromium) y `ui-backend` (selector, ruteo, fallback por salud, failover, recuperación) | `e2e/tests/` |
+| Tests Go | `decimal`, `domain`, `app`, `httpapi` (decoder, ProblemDetail, rutas, health, OpenAPI, Swagger) y `TestParityCases` (80 casos byte a byte); gate 90% sobre `internal/...` | `backend-go/internal/**/*_test.go` |
+| Tests de contrato en Java | `ContractParityIT` (80 casos) y `OpenApiContractIT` | `backend/src/test/java/com/sezzle/calculator/` |
 | WebKit local | La build WebKit de Playwright 1.65 se cae en macOS 14.3 (`Bus error: 10`). Se verifica en Linux: CI o la imagen `mcr.microsoft.com/playwright:v1.65.1-noble` | — |
-| Última verificación (feat/optional-operations, 2026-11-15) | backend `mvn verify`: 137 unitarios + 11 IT, gate JaCoCo cumplido · frontend: 275 tests, cobertura 98.31/97.22/100/99.14, lint y build · E2E: chromium/firefox/mobile 118 ✓, webkit (Linux) 32 ✓ · integración vía nginx: 16 flujos | local + contenedor `mcr.microsoft.com/playwright:v1.65.1-noble` |
+| Última verificación (feat/go-backend, 2026-11-15) | Java `mvn verify`: 137 unitarios + 92 IT (incl. ContractParityIT 80 y OpenApiContractIT), gate JaCoCo cumplido · Go: `go test -race` en verde, gate 98.4% sobre `internal/...`, TestParityCases 80/80 · frontend: 344 tests, cobertura 99.71/97.92/100/100, lint y build · E2E: chromium/firefox/mobile 221 ✓, webkit (Linux) 40 ✓, parity Java == Go 78 casos · Docker: inicio limpio de 3 servicios sanos; con `backend-go` parado, sus rutas dan 502 en 0,1 s y Java sigue · `up.test.sh` OK | local + contenedor `mcr.microsoft.com/playwright:v1.65.1-noble` |
 
 ## Estrategia
 

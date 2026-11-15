@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
-import { displayValue, expectValue, pasteText, press } from './helpers';
+import { displayValue, expectValue, openApp, pasteText, press } from './helpers';
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/');
+  await openApp(page);
 });
 
 test('6 / 0 = shows Cannot divide by zero, then recovers with 3 = 2', async ({ page }) => {

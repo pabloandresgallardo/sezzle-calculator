@@ -9,7 +9,8 @@ Fuente: intención de proyecto — 2026-11-15 · evidencia verificada — 2026-1
 | Lint obligatorio | `spotless:check` en `verify`; `npm run lint` en CI | `backend/pom.xml`, `.github/workflows/ci.yml` |
 | Cobertura ≥ 90% | `jacoco:check`; umbrales de Vitest | `backend/pom.xml`, `frontend/vite.config.ts` |
 | `.env` fuera del repo | ignorado | `.gitignore` |
-| Puertos configurables | `SERVER_PORT`, `VITE_PORT`, `BACKEND_PORT`, `WEB_PORT` | `application.yml`, `vite.config.ts`, `docker-compose.yml` |
+| Puertos configurables | `SERVER_PORT` (Java), `PORT` (Go), `WEB_PORT`, `BACKEND_JAVA_PORT`, `BACKEND_GO_PORT`, `VITE_PORT`, `VITE_JAVA_TARGET`, `VITE_GO_TARGET`; `make up` busca puertos libres | `application.yml`, `backend-go/cmd/server`, `vite.config.ts`, `docker-compose.yml`, `scripts/up.sh` |
+| Paridad Java == Go | `ContractParityIT`, `TestParityCases`, `e2e/tests/parity.spec.ts` sobre `contract/parity-cases.json` | `contract/` |
 | Contrato estable con `title` exactos y orden de validación | `CalculatorControllerTest` (todas las filas de la spec) y `e2e/tests/api-contract.spec.ts` | ADR-002 |
 | BigDecimal en todo el cálculo; `result` como string | `Operation.apply`, `CalculationResult.formatted()` | `backend/.../domain/model/` |
 | Límites de operando y normalización (anti-DoS) | `Operand` + `OperandTest` (exponentes extremos, cero con exponente enorme con `@Timeout`) | `backend/.../domain/model/` |
@@ -21,7 +22,8 @@ Fuente: intención de proyecto — 2026-11-15 · evidencia verificada — 2026-1
 - `make lint` en verde: Spotless con Palantir y ESLint + Prettier.
 - Cobertura ≥ 90% en líneas y branches, en backend y frontend.
 - TDD: cada cambio de comportamiento entra con su test, escrito primero.
-- El contrato `POST /api/v1/calculate` no cambia sin un ADR nuevo, porque lo comparte la futura implementación en Go.
+- El contrato `POST /api/v1/calculate` no cambia sin un ADR nuevo, y cualquier cambio se hace a la vez en Java, Go y `contract/` (los tres tests de paridad tienen que pasar).
+- Go usa solo la biblioteca estándar; no se agregan dependencias sin un ADR.
 - `result` es siempre un string decimal. Nunca `double` ni `float` en el cálculo del backend.
 - El dominio del backend no depende de Spring.
 - Sin secretos ni configuración sensible en el repo. `.env` está en `.gitignore` y solo se versiona `.env.example`.
