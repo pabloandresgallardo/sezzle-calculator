@@ -8,26 +8,26 @@ Las secciones siguientes describen la arquitectura acordada en ADR-001. Esta tab
 
 | Elemento | Estado | Fuente |
 |----------|--------|--------|
-| Entry point Spring Boot | presente | `backend/src/main/java/com/sezzle/calculator/CalculatorApplication.java` |
-| Dominio: `Operation` (enum con `apply`, `fromCode`, `arity`), `Operand` (record que valida y normaliza), `CalculationResult` y 4 excepciones de dominio sobre `CalculationException` | implementado | `backend/.../domain/model/`, `backend/.../domain/exception/` |
-| Aplicación: puerto `CalculateUseCase` + `CalculateCommand`; `CalculatorService` aplica el orden de validación | implementado | `backend/.../application/` |
-| Adapter web: `CalculatorController` (`POST /api/v1/calculate`), DTOs (records), `ProblemDetailHandler` | implementado | `backend/.../adapter/in/web/` |
-| Config: `JacksonConfig` (estricto: sin conversión de tipos, campos desconocidos fallan), `OpenApiConfig` (título "Sezzle Calculator API", `v1`) | implementado | `backend/.../config/` |
-| Puerto `${SERVER_PORT:8090}`, actuator health, rutas de springdoc | configurado | `backend/src/main/resources/application.yml` |
+| Entry point Spring Boot | presente | `backend/java/src/main/java/com/sezzle/calculator/CalculatorApplication.java` |
+| Dominio: `Operation` (enum con `apply`, `fromCode`, `arity`), `Operand` (record que valida y normaliza), `CalculationResult` y 4 excepciones de dominio sobre `CalculationException` | implementado | `backend/java/.../domain/model/`, `backend/java/.../domain/exception/` |
+| Aplicación: puerto `CalculateUseCase` + `CalculateCommand`; `CalculatorService` aplica el orden de validación | implementado | `backend/java/.../application/` |
+| Adapter web: `CalculatorController` (`POST /api/v1/calculate`), DTOs (records), `ProblemDetailHandler` | implementado | `backend/java/.../adapter/in/web/` |
+| Config: `JacksonConfig` (estricto: sin conversión de tipos, campos desconocidos fallan), `OpenApiConfig` (título "Sezzle Calculator API", `v1`) | implementado | `backend/java/.../config/` |
+| Puerto `${SERVER_PORT:8090}`, actuator health, rutas de springdoc | configurado | `backend/java/src/main/resources/application.yml` |
 | Frontend: `App` → `CalculatorPanel` → `DisplayPanel` y `Keypad` → `Display` y `CalcButton` | implementado | `frontend/src/app/`, `frontend/src/features/calculator/{atoms,molecules,organisms}/` |
 | Modelo del frontend: `calculatorReducer` (máquina de estados pura), `limits`, `errorMessages`, `types` | implementado | `frontend/src/features/calculator/model/` |
 | `useCalculator` (efectos de API con `AbortController`, teclado y paste en `window`) y `calculatorApi` (fetch tipado) | implementado | `frontend/src/features/calculator/{hooks,api}/` |
 | `shared/` | vacío (`.gitkeep`) | `frontend/src/shared/` |
 | Vite en `:5180`: `/api/java` → `:8090`, `/api/go` → `:8091` (quita el prefijo; `/health` → `/actuator/health`), `/api` → Java | configurado | `frontend/vite.config.ts` |
 | nginx: `resolver 127.0.0.11` y `proxy_pass` con variables; `/api/java/` → `backend-java:8090/api/`, `/api/go/` → `backend-go:8091/api/`, `/api/{b}/health` → `/actuator/health`, `/api/` → Java; `proxy_connect_timeout 2s` | configurado | `frontend/nginx.conf` |
-| Stack Docker de 3 servicios (`backend-java`, `backend-go`, `web` con `service_started`) con healthchecks | configurado | `backend/Dockerfile`, `backend-go/Dockerfile`, `frontend/Dockerfile`, `docker-compose*.yml` |
-| Backend Go: `decimal` (math/big), `domain`, `app`, `httpapi` (decoder estricto tipo Jackson, ProblemDetail, health, OpenAPI embebido + Swagger UI), `cmd/server` (`-healthcheck`) | implementado | `backend-go/` |
+| Stack Docker de 3 servicios (`backend-java`, `backend-go`, `web` con `service_started`) con healthchecks | configurado | `backend/java/Dockerfile`, `backend/go/Dockerfile`, `frontend/Dockerfile`, `docker-compose*.yml` |
+| Backend Go: `decimal` (math/big), `domain`, `app`, `httpapi` (decoder estricto tipo Jackson, ProblemDetail, health, OpenAPI embebido + Swagger UI), `cmd/server` (`-healthcheck`) | implementado | `backend/go/` |
 | Contrato compartido: 80 casos de paridad + OpenAPI | implementado | `contract/` |
 | Frontend: selección de backend (`checkHealth`, `useBackends`, `BackendSelector`), failover con un reintento | implementado | `frontend/src/shared/backend/`, `features/calculator/{api,hooks}/` |
 
 ## Visión
 
-Calculadora fullstack en un monorepo. El frontend React consume un único endpoint REST del backend Java. El backend es **stateless**: no persiste nada ni tiene puertos de salida.
+Calculadora fullstack en un monorepo. El frontend React consume un único endpoint REST, implementado por dos backends intercambiables: Go (por defecto) y Java. El backend es **stateless**: no persiste nada ni tiene puertos de salida.
 
 Diagramas: `.ai/diagrams/architecture-overview.png`, `.ai/diagrams/data-flow.png`.
 
@@ -35,7 +35,9 @@ Diagramas: `.ai/diagrams/architecture-overview.png`, `.ai/diagrams/data-flow.png
 
 | Carpeta | Contenido |
 |---------|-----------|
-| `backend/` | Microservicio Java 21 + Spring Boot 4.1.2 (Maven) |
+| `backend/go/` | Microservicio Go 1.27, solo biblioteca estándar (backend por defecto) |
+| `backend/java/` | Microservicio Java 21 + Spring Boot 4.1.2 (Maven) |
+| `contract/` | Contrato compartido: 80 casos de paridad + OpenAPI |
 | `frontend/` | SPA React 19.3 + TypeScript 6.0 + Vite 8 |
 | `e2e/` | Suite Playwright 1.65 contra el stack dockerizado |
 | `.ai/` | Documentación de ingeniería, ADRs y diagramas |
@@ -118,11 +120,11 @@ src/
 
 | Entorno | Front | Back | Cómo llega `/api` |
 |---------|-------|------|-------------------|
-| Desarrollo | Vite `:5180` | Java `make run-backend` `:8090` · Go `make run-go` `:8091` | proxy de Vite por prefijo |
+| Desarrollo | Vite `:5180` | Java `make run-java` `:8090` · Go `make run-go` `:8091` | proxy de Vite por prefijo |
 | docker-compose (`docker compose up --build` o `make up`) | nginx `:3000` | `backend-java` `:8090` · `backend-go` `:8091` | proxy de nginx por prefijo |
 | E2E | nginx en puerto efímero | los dos backends, internos | proxy de nginx |
 
-**Selección de backend (frontend):** Java por defecto en cada carga (sin persistencia). Al montar se chequea `/api/{b}/health` con timeout de 2 s; si uno está caído se oculta el selector y se usa el sano; mientras haya uno caído se re-chequea cada 10 s. Ante un error de indisponibilidad (red, 5xx o timeout de 10 s) se marca caído el backend usado, se re-chequea el otro y se reintenta una vez. Detalle y casos que se corrigen solos: ADR-004.
+**Selección de backend (frontend):** Go por defecto en cada carga (sin persistencia; ADR-005). Al montar se chequea `/api/{b}/health` con timeout de 2 s; si uno está caído se oculta el selector y se usa el sano; mientras haya uno caído se re-chequea cada 10 s. Ante un error de indisponibilidad (red, 5xx o timeout de 10 s) se marca caído el backend usado, se re-chequea el otro y se reintenta una vez. Detalle y casos que se corrigen solos: ADR-004.
 
 Front y back comparten origen en todos los entornos, así que **no se configura CORS**.
 
@@ -130,3 +132,5 @@ Front y back comparten origen en todos los entornos, así que **no se configura 
 
 - **Iteración 1** (ADR-002): `add`, `subtract`, `multiply` y `divide`.
 - **Iteración 2** (ADR-003): `power`, `sqrt` y `percentage`, teclado 4×6 y tema oscuro/claro.
+- **Iteración 3** (ADR-004): backend Go con paridad byte a byte, selector de backend, fallback por salud y stack Docker de 3 servicios.
+- **Entrega** (ADR-005): backends en `backend/java` y `backend/go`; Go pasa a ser el backend por defecto.

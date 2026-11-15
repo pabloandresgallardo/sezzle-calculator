@@ -4,29 +4,29 @@ sequenceDiagram
   participant BK as useBackends
   participant Api as calculatorApi
   participant NX as nginx
-  participant J as backend-java
   participant G as backend-go
+  participant J as backend-java
   UI->>BK: mount
-  BK->>NX: GET /api/java/health + /api/go/health
+  BK->>NX: GET /api/go/health + /api/java/health
   NX-->>BK: UP / UP
-  BK-->>UI: active = java, selector visible
+  BK-->>UI: active = go, selector visible
   User->>UI: 6 ÷ 3 =
-  UI->>Api: calculate(divide, [6, 3], java)
-  Api->>NX: POST /api/java/v1/calculate
-  NX->>J: POST /api/v1/calculate
-  alt java answers
-    J-->>NX: 200 {"result":"2"}
+  UI->>Api: calculate(divide, [6, 3], go)
+  Api->>NX: POST /api/go/v1/calculate
+  NX->>G: POST /api/v1/calculate
+  alt go answers
+    G-->>NX: 200 {"result":"2"}
     NX-->>Api: 200
     Api-->>UI: "2"
-  else java unavailable (502 / timeout)
+  else go unavailable (502 / timeout)
     NX-->>Api: 502
-    Api->>BK: failover(java)
-    BK->>NX: GET /api/go/health
+    Api->>BK: failover(go)
+    BK->>NX: GET /api/java/health
     NX-->>BK: UP
-    BK-->>Api: go (selector hidden)
-    Api->>NX: POST /api/go/v1/calculate
-    NX->>G: POST /api/v1/calculate
-    G-->>NX: 200 {"result":"2"}
+    BK-->>Api: java (selector hidden)
+    Api->>NX: POST /api/java/v1/calculate
+    NX->>J: POST /api/v1/calculate
+    J-->>NX: 200 {"result":"2"}
     NX-->>Api: 200
     Api-->>UI: "2"
   end

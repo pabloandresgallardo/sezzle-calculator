@@ -39,12 +39,12 @@ const initialState: BackendsState = {
 };
 
 /**
- * | java | go   | active                                        | selector |
+ * | go   | java | active                                        | selector |
  * |------|------|-----------------------------------------------|----------|
- * | up   | up   | the user's choice, else java                  | shown    |
- * | down | up   | go                                            | hidden   |
- * | up   | down | java                                          | hidden   |
- * | down | down | unchanged (java at start-up)                  | hidden   |
+ * | up   | up   | the user's choice, else go (DEFAULT_BACKEND)  | shown    |
+ * | down | up   | java                                          | hidden   |
+ * | up   | down | go                                            | hidden   |
+ * | down | down | unchanged (go at start-up)                    | hidden   |
  */
 function backendsReducer(state: BackendsState, action: BackendsAction): BackendsState {
   if (action.type === 'selected') {
@@ -52,7 +52,7 @@ function backendsReducer(state: BackendsState, action: BackendsAction): Backends
   }
   const health: Health = { ...state.health, ...action.health };
   if (health.java === true && health.go === true) {
-    // Recovered: an automatic switch silently returns to java; a user's choice is respected.
+    // Recovered: an automatic switch silently returns to the default; a user's choice is respected.
     return {
       health,
       active: state.chosenByUser ? state.active : DEFAULT_BACKEND,

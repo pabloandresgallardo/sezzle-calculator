@@ -30,7 +30,7 @@ async function mount() {
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
-  healthy = { java: true, go: true };
+  healthy = { go: true, java: true };
   vi.mocked(checkHealth).mockImplementation((backend) => Promise.resolve(healthy[backend]));
 });
 
@@ -42,141 +42,141 @@ afterEach(() => {
 });
 
 describe('useBackends', () => {
-  it('starts on java with both healthy and is selectable', async () => {
+  it('starts on go with both healthy and is selectable', async () => {
     const { result } = renderHook(() => useBackends());
-    expect(result.current.active).toBe('java');
+    expect(result.current.active).toBe('go');
     expect(result.current.selectable).toBe(false);
     await flush();
-    expect(result.current.active).toBe('java');
+    expect(result.current.active).toBe('go');
     expect(result.current.selectable).toBe(true);
-    expect(checks('java')).toBe(1);
     expect(checks('go')).toBe(1);
+    expect(checks('java')).toBe(1);
   });
 
-  it('switches silently to go when java is down', async () => {
-    healthy = { java: false, go: true };
+  it('switches silently to java when go is down', async () => {
+    healthy = { go: false, java: true };
+    const { result } = await mount();
+    expect(result.current.active).toBe('java');
+    expect(result.current.selectable).toBe(false);
+  });
+
+  it('uses go when java is down', async () => {
+    healthy = { go: true, java: false };
     const { result } = await mount();
     expect(result.current.active).toBe('go');
     expect(result.current.selectable).toBe(false);
   });
 
-  it('uses java when go is down', async () => {
-    healthy = { java: true, go: false };
+  it('stays on go with both down', async () => {
+    healthy = { go: false, java: false };
     const { result } = await mount();
-    expect(result.current.active).toBe('java');
-    expect(result.current.selectable).toBe(false);
-  });
-
-  it('stays on java with both down', async () => {
-    healthy = { java: false, go: false };
-    const { result } = await mount();
-    expect(result.current.active).toBe('java');
+    expect(result.current.active).toBe('go');
     expect(result.current.selectable).toBe(false);
     await expect(result.current.failover()).resolves.toBeNull();
   });
 
   it('rechecks every 10s while degraded and stops when both healthy', async () => {
     expect(RECHECK_INTERVAL_MS).toBe(10_000);
-    healthy = { java: true, go: false };
+    healthy = { go: true, java: false };
     const { result } = await mount();
-    expect(checks('go')).toBe(1);
+    expect(checks('java')).toBe(1);
 
     await advance(RECHECK_INTERVAL_MS - 1);
-    expect(checks('go')).toBe(1);
+    expect(checks('java')).toBe(1);
     await advance(1);
-    expect(checks('go')).toBe(2);
     expect(checks('java')).toBe(2);
+    expect(checks('go')).toBe(2);
     await advance(RECHECK_INTERVAL_MS);
-    expect(checks('go')).toBe(3);
+    expect(checks('java')).toBe(3);
 
-    healthy = { java: true, go: true };
+    healthy = { go: true, java: true };
     await advance(RECHECK_INTERVAL_MS);
-    expect(checks('go')).toBe(4);
+    expect(checks('java')).toBe(4);
     expect(result.current.selectable).toBe(true);
 
     await advance(RECHECK_INTERVAL_MS * 5);
-    expect(checks('go')).toBe(4);
     expect(checks('java')).toBe(4);
+    expect(checks('go')).toBe(4);
   });
 
   it('keeps rechecking with both down', async () => {
-    healthy = { java: false, go: false };
+    healthy = { go: false, java: false };
     await mount();
     await advance(RECHECK_INTERVAL_MS * 3);
-    expect(checks('java')).toBe(4);
     expect(checks('go')).toBe(4);
+    expect(checks('java')).toBe(4);
   });
 
   it('clears the recheck interval on unmount', async () => {
-    healthy = { java: false, go: true };
+    healthy = { go: false, java: true };
     const { unmount } = await mount();
     unmount();
     await advance(RECHECK_INTERVAL_MS * 3);
-    expect(checks('java')).toBe(1);
+    expect(checks('go')).toBe(1);
   });
 
-  it('returns to java when recovered after an automatic switch', async () => {
-    healthy = { java: false, go: true };
+  it('returns to go when recovered after an automatic switch', async () => {
+    healthy = { go: false, java: true };
     const { result } = await mount();
-    expect(result.current.active).toBe('go');
-
-    healthy = { java: true, go: true };
-    await advance(RECHECK_INTERVAL_MS);
     expect(result.current.active).toBe('java');
+
+    healthy = { go: true, java: true };
+    await advance(RECHECK_INTERVAL_MS);
+    expect(result.current.active).toBe('go');
     expect(result.current.selectable).toBe(true);
   });
 
-  it('returns to java when recovered after a failover', async () => {
+  it('returns to go when recovered after a failover', async () => {
     const { result } = await mount();
     let next: Backend | null = null;
     await act(async () => {
       next = await result.current.failover();
     });
-    expect(next).toBe('go');
-    expect(result.current.active).toBe('go');
+    expect(next).toBe('java');
+    expect(result.current.active).toBe('java');
     expect(result.current.selectable).toBe(false);
 
     await advance(RECHECK_INTERVAL_MS);
-    expect(result.current.active).toBe('java');
+    expect(result.current.active).toBe('go');
     expect(result.current.selectable).toBe(true);
   });
 
-  it('keeps go when the user chose it', async () => {
+  it('keeps java when the user chose it', async () => {
     const { result } = await mount();
-    act(() => {
-      result.current.select('go');
-    });
-    expect(result.current.active).toBe('go');
-
-    await advance(RECHECK_INTERVAL_MS * 6);
-    expect(result.current.active).toBe('go');
-    expect(result.current.selectable).toBe(true);
-    // Both healthy: no polling, so nothing can flip the user's choice back.
-    expect(checks('go')).toBe(1);
-  });
-
-  it('follows the user back to java', async () => {
-    const { result } = await mount();
-    act(() => {
-      result.current.select('go');
-    });
     act(() => {
       result.current.select('java');
     });
     expect(result.current.active).toBe('java');
+
+    await advance(RECHECK_INTERVAL_MS * 6);
+    expect(result.current.active).toBe('java');
+    expect(result.current.selectable).toBe(true);
+    // Both healthy: no polling, so nothing can flip the user's choice back.
+    expect(checks('java')).toBe(1);
+  });
+
+  it('follows the user back to go', async () => {
+    const { result } = await mount();
+    act(() => {
+      result.current.select('java');
+    });
+    act(() => {
+      result.current.select('go');
+    });
+    expect(result.current.active).toBe('go');
   });
 
   it('switches away from a user-chosen backend that goes down', async () => {
     const { result } = await mount();
     act(() => {
-      result.current.select('go');
+      result.current.select('java');
     });
-    let next: Backend | null = 'go';
+    let next: Backend | null = 'java';
     await act(async () => {
       next = await result.current.failover();
     });
-    expect(next).toBe('java');
-    expect(result.current.active).toBe('java');
+    expect(next).toBe('go');
+    expect(result.current.active).toBe('go');
     expect(result.current.selectable).toBe(false);
   });
 
@@ -186,57 +186,57 @@ describe('useBackends', () => {
     await act(async () => {
       next = await result.current.failover();
     });
-    expect(next).toBe('go');
-    expect(result.current.active).toBe('go');
+    expect(next).toBe('java');
+    expect(result.current.active).toBe('java');
 
-    healthy = { java: false, go: false };
+    healthy = { go: false, java: false };
     await act(async () => {
       next = await result.current.failover();
     });
     expect(next).toBeNull();
-    expect(result.current.active).toBe('go');
+    expect(result.current.active).toBe('java');
   });
 
   it('blames the backend the request used even if active changed meanwhile', async () => {
-    // Java's mount check hangs (until its 2 s timeout) while Go answers UP.
+    // Go's mount check hangs (until its 2 s timeout) while Java answers UP.
     let finishJavaCheck: (up: boolean) => void = () => undefined;
     vi.mocked(checkHealth).mockImplementation((backend) =>
-      backend === 'java'
+      backend === 'go'
         ? new Promise<boolean>((resolve) => {
             finishJavaCheck = resolve;
           })
         : Promise.resolve(true),
     );
     const { result } = await mount();
-    // A request goes to java here; then the timed-out check switches active to go.
-    expect(result.current.active).toBe('java');
+    // A request goes to go here; then the timed-out check switches active to java.
+    expect(result.current.active).toBe('go');
     await act(async () => {
       finishJavaCheck(false);
       await Promise.resolve();
     });
-    expect(result.current.active).toBe('go');
+    expect(result.current.active).toBe('java');
 
     vi.mocked(checkHealth).mockClear();
     let next: Backend | null = null;
     await act(async () => {
-      next = await result.current.failover('java');
+      next = await result.current.failover('go');
     });
-    expect(next).toBe('go');
-    expect(result.current.active).toBe('go');
-    expect(vi.mocked(checkHealth).mock.calls.map(([b]) => b)).toEqual(['go']);
+    expect(next).toBe('java');
+    expect(result.current.active).toBe('java');
+    expect(vi.mocked(checkHealth).mock.calls.map(([b]) => b)).toEqual(['java']);
   });
 
   it('does not persist the selection', async () => {
     const first = await mount();
     act(() => {
-      first.result.current.select('go');
+      first.result.current.select('java');
     });
-    expect(first.result.current.active).toBe('go');
+    expect(first.result.current.active).toBe('java');
     first.unmount();
     expect(localStorage.length).toBe(0);
     expect(sessionStorage.length).toBe(0);
 
     const second = await mount();
-    expect(second.result.current.active).toBe('java');
+    expect(second.result.current.active).toBe('go');
   });
 });

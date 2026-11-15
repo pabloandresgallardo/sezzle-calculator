@@ -14,7 +14,7 @@ let healthy: Record<Backend, boolean>;
 let healthChecks: Backend[];
 
 beforeEach(() => {
-  healthy = { java: true, go: true };
+  healthy = { go: true, java: true };
   healthChecks = [];
   server.use(
     http.get('/api/:backend/health', ({ params }) => {
@@ -59,14 +59,14 @@ describe('App', () => {
     expect(header).toContainElement(selector);
     expect(header).toContainElement(toggle);
     expect(calculator()).not.toContainElement(selector);
-    // Selector first, then the toggle: `[Backend: Java | Go] [☀]`.
+    // Selector first, then the toggle: `[Backend: Go | Java] [☀]`.
     expect(
       selector.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    expect(screen.getByRole('radio', { name: 'Java' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Go' })).toBeChecked();
   });
 
-  it.each(['go', 'java'] as const)(
+  it.each(['java', 'go'] as const)(
     'hides the selector when one backend is down (%s)',
     async (down) => {
       healthy[down] = false;
@@ -77,8 +77,8 @@ describe('App', () => {
     },
   );
 
-  it('calculates on go when java is down', async () => {
-    healthy.java = false;
+  it('calculates on java when go is down', async () => {
+    healthy.go = false;
     const served: string[] = [];
     server.use(
       http.post('/api/:backend/v1/calculate', ({ params }) => {
@@ -93,36 +93,36 @@ describe('App', () => {
     await waitFor(() => {
       expect(mainLine()).toHaveTextContent(/^5$/);
     });
-    expect(served).toEqual(['go']);
+    expect(served).toEqual(['java']);
   });
 
-  it('retries on go when java fails after a late health result already switched to go', async () => {
+  it('retries on java when go fails after a late health result already switched to java', async () => {
     let finishJavaHealth: () => void = () => undefined;
     let failJava: () => void = () => undefined;
     const served: string[] = [];
     server.use(
       http.get(
-        '/api/java/health',
+        '/api/go/health',
         () =>
           new Promise<Response>((resolve) => {
-            healthChecks.push('java');
+            healthChecks.push('go');
             finishJavaHealth = () => {
               resolve(HttpResponse.json({ status: 'DOWN' }, { status: 503 }));
             };
           }),
       ),
       http.post(
-        '/api/java/v1/calculate',
+        '/api/go/v1/calculate',
         () =>
           new Promise<Response>((resolve) => {
-            served.push('java');
+            served.push('go');
             failJava = () => {
               resolve(new HttpResponse('Bad Gateway', { status: 502 }));
             };
           }),
       ),
-      http.post('/api/go/v1/calculate', () => {
-        served.push('go');
+      http.post('/api/java/v1/calculate', () => {
+        served.push('java');
         return HttpResponse.json({ operation: 'add', result: '5' });
       }),
     );
@@ -130,7 +130,7 @@ describe('App', () => {
     render(<App />);
     await user.keyboard('2+3=');
     await waitFor(() => {
-      expect(served).toEqual(['java']);
+      expect(served).toEqual(['go']);
     });
     await act(async () => {
       finishJavaHealth();
@@ -141,7 +141,7 @@ describe('App', () => {
       expect(mainLine()).toHaveTextContent(/^5$/);
     });
     expect(screen.queryByText('Service unavailable')).not.toBeInTheDocument();
-    expect(served).toEqual(['java', 'go']);
+    expect(served).toEqual(['go', 'java']);
   });
 
   it('Enter on a focused backend option does not press =', async () => {
@@ -154,9 +154,9 @@ describe('App', () => {
     );
     const user = userEvent.setup();
     render(<App />);
-    const java = await screen.findByRole('radio', { name: 'Java' });
+    const go = await screen.findByRole('radio', { name: 'Go' });
     await user.keyboard('2+3');
-    java.focus();
+    go.focus();
     await user.keyboard('{Enter}');
     expect(mainLine()).toHaveTextContent(/^3$/);
     expect(requests).toEqual([]);
@@ -180,7 +180,7 @@ describe('App', () => {
   it('Enter on the focused theme toggle switches theme and does not press =', async () => {
     const requests: unknown[] = [];
     server.use(
-      http.post('/api/java/v1/calculate', async ({ request }) => {
+      http.post('/api/go/v1/calculate', async ({ request }) => {
         requests.push(await request.json());
         return HttpResponse.json({ operation: 'add', result: '5' });
       }),

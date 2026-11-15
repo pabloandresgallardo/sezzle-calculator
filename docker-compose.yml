@@ -1,6 +1,6 @@
 services:
   backend-java:
-    build: ./backend
+    build: ./backend/java
     environment:
       SERVER_PORT: 8090
     networks:
@@ -11,7 +11,7 @@ services:
     # healthcheck: from the image (curl /actuator/health)
 
   backend-go:
-    build: ./backend-go
+    build: ./backend/go
     environment:
       PORT: 8091
     ports:
