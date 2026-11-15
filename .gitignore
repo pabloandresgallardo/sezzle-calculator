@@ -1,0 +1,25 @@
+# Java / Maven
+target/
+*.class
+*.log
+
+# Node
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Playwright
+playwright-report/
+test-results/
+blob-report/
+
+# Env
+.env
+.env.local
+
+# IDE / OS
+.idea/
+*.iml
+.vscode/
+.DS_Store

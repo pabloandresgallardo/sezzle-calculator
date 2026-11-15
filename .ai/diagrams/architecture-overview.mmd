@@ -1,0 +1,21 @@
+graph LR
+  subgraph FE["Frontend — React 19 + Vite 8"]
+    UI[Atomic UI] --> Hook[useCalculator]
+    Hook --> Api[calculatorApi]
+  end
+  subgraph EDGE["Edge — Docker"]
+    Nginx[nginx :3000]
+  end
+  subgraph IN["Backend — Adapter in"]
+    Ctrl[CalculatorController]
+    Errors[ProblemDetail handler]
+  end
+  subgraph CORE["Backend — Hexagon core"]
+    Port[CalculateUseCase] --> Svc[CalculatorService]
+    Svc --> Op[Operation]
+    Op --> Rules[BigDecimal rules]
+  end
+  Api -->|POST /api/v1/calculate| Nginx
+  Nginx -->|proxy /api| Ctrl
+  Ctrl --> Port
+  Ctrl -.->|domain errors| Errors

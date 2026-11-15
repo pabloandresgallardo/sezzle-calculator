@@ -1,0 +1,28 @@
+sequenceDiagram
+  actor User
+  participant UI as Atomic UI
+  participant Hook as useCalculator
+  participant Api as calculatorApi
+  participant Ctrl as CalculatorController
+  participant Core as CalculatorService
+  User->>UI: 6 ÷ 3 =
+  UI->>Hook: dispatch(equals)
+  Hook->>Hook: validate input
+  alt invalid number
+    Hook-->>UI: client error
+  else valid
+    Hook->>Api: calculate(divide, [6, 3])
+    Api->>Ctrl: POST /api/v1/calculate
+    Ctrl->>Ctrl: validate request
+    Ctrl->>Core: execute(command)
+    alt success
+      Core-->>Ctrl: BigDecimal result
+      Ctrl-->>Api: 200 {"result":"2"}
+    else divisor is zero
+      Core-->>Ctrl: DomainException
+      Ctrl-->>Api: 400 ProblemDetail
+    end
+    Api-->>Hook: result or typed error
+    Hook-->>UI: new state
+  end
+  UI-->>User: render display
