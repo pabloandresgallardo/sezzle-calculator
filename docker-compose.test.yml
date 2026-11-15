@@ -1,7 +1,7 @@
 # Isolated stack for E2E: web on an ephemeral host port, backends not published.
 services:
   backend-java:
-    build: ./backend
+    build: ./backend/java
     environment:
       SERVER_PORT: 8090
     networks:
@@ -9,7 +9,7 @@ services:
         aliases: [backend] # old service name, kept for compatibility
 
   backend-go:
-    build: ./backend-go
+    build: ./backend/go
     environment:
       PORT: 8091
     healthcheck:

@@ -9,7 +9,7 @@ import { server } from '../../../test/msw/server';
 import type { Operation } from '../model/types';
 import { CalculatorPanel } from './CalculatorPanel';
 
-const URL_PATH = '/api/java/v1/calculate';
+const URL_PATH = '/api/go/v1/calculate';
 
 const noFailover = (): Promise<Backend | null> => Promise.resolve(null);
 
@@ -63,7 +63,7 @@ function calculatorHandler(backend: Backend) {
 
 /** What `App` wires together: the selector and the panel sharing the active backend. */
 function Harness({ failover = noFailover }: { failover?: () => Promise<Backend | null> }) {
-  const [backend, setBackend] = useState<Backend>('java');
+  const [backend, setBackend] = useState<Backend>('go');
   const [busy, setBusy] = useState(false);
   return (
     <>
@@ -94,43 +94,43 @@ async function press(user: ReturnType<typeof userEvent.setup>, ...names: string[
 beforeEach(() => {
   requests = [];
   backends = [];
-  server.use(calculatorHandler('java'), calculatorHandler('go'));
+  server.use(calculatorHandler('go'), calculatorHandler('java'));
 });
 
 describe('CalculatorPanel backend routing', () => {
-  it('computes on java by default', async () => {
+  it('computes on go by default', async () => {
     const user = userEvent.setup();
     render(<Harness />);
     await press(user, '6', 'divide', '3', 'equals');
     await waitFor(() => {
       expect(mainLine()).toHaveTextContent(/^2$/);
     });
-    expect(backends).toEqual(['java']);
+    expect(backends).toEqual(['go']);
   });
 
-  it('switching to go sends the next calculation to go without reload', async () => {
+  it('switching to java sends the next calculation to java without reload', async () => {
     const user = userEvent.setup();
     render(<Harness />);
     await press(user, '2', 'add', '3', 'equals');
     await waitFor(() => {
       expect(mainLine()).toHaveTextContent(/^5$/);
     });
-    await user.click(screen.getByRole('radio', { name: 'Go' }));
+    await user.click(screen.getByRole('radio', { name: 'Java' }));
     await press(user, 'multiply', '4', 'equals');
     await waitFor(() => {
       expect(mainLine()).toHaveTextContent(/^20$/);
     });
-    await user.click(screen.getByRole('radio', { name: 'Java' }));
+    await user.click(screen.getByRole('radio', { name: 'Go' }));
     await press(user, 'add', '1', 'equals');
     await waitFor(() => {
       expect(mainLine()).toHaveTextContent(/^21$/);
     });
-    expect(backends).toEqual(['java', 'go', 'java']);
+    expect(backends).toEqual(['go', 'java', 'go']);
   });
 
-  it('fails over to go and retries once on 502 from java', async () => {
+  it('fails over to java and retries once on 502 from go', async () => {
     server.use(http.post(URL_PATH, () => new HttpResponse('Bad Gateway', { status: 502 })));
-    const failover = vi.fn((): Promise<Backend | null> => Promise.resolve('go'));
+    const failover = vi.fn((): Promise<Backend | null> => Promise.resolve('java'));
     const user = userEvent.setup();
     render(<Harness failover={failover} />);
     await press(user, '6', 'divide', '3', 'equals');
@@ -139,18 +139,18 @@ describe('CalculatorPanel backend routing', () => {
     });
     expect(screen.queryByText('Service unavailable')).not.toBeInTheDocument();
     expect(failover).toHaveBeenCalledTimes(1);
-    expect(backends).toEqual(['go']);
+    expect(backends).toEqual(['java']);
     expect(requests).toEqual([{ operation: 'divide', operands: [6, 3] }]);
   });
 
   it('does not fail over on contract errors', async () => {
-    const failover = vi.fn((): Promise<Backend | null> => Promise.resolve('go'));
+    const failover = vi.fn((): Promise<Backend | null> => Promise.resolve('java'));
     const user = userEvent.setup();
     render(<Harness failover={failover} />);
     await press(user, '5', 'divide', '0', 'equals');
     expect(await screen.findByText('Cannot divide by zero')).toBeInTheDocument();
     expect(failover).not.toHaveBeenCalled();
-    expect(backends).toEqual(['java']);
+    expect(backends).toEqual(['go']);
   });
 
   it('retries at most once', async () => {
@@ -161,7 +161,7 @@ describe('CalculatorPanel backend routing', () => {
         return HttpResponse.error();
       }),
     );
-    const failover = vi.fn((): Promise<Backend | null> => Promise.resolve('go'));
+    const failover = vi.fn((): Promise<Backend | null> => Promise.resolve('java'));
     const user = userEvent.setup();
     render(<Harness failover={failover} />);
     await press(user, '7', 'subtract', '9', 'equals');
@@ -186,33 +186,33 @@ describe('CalculatorPanel backend routing', () => {
     );
     const user = userEvent.setup();
     render(<Harness />);
-    expect(screen.getByRole('radio', { name: 'Go' })).toBeEnabled();
+    expect(screen.getByRole('radio', { name: 'Java' })).toBeEnabled();
     await press(user, '1', 'add', '2', 'equals');
     await waitFor(() => {
-      expect(screen.getByRole('radio', { name: 'Go' })).toBeDisabled();
+      expect(screen.getByRole('radio', { name: 'Java' })).toBeDisabled();
     });
-    expect(screen.getByRole('radio', { name: 'Java' })).toBeDisabled();
+    expect(screen.getByRole('radio', { name: 'Go' })).toBeDisabled();
     release();
     await waitFor(() => {
       expect(mainLine()).toHaveTextContent(/^3$/);
     });
     // `onBusyChange` runs in a passive effect, one render after the result.
     await waitFor(() => {
-      expect(screen.getByRole('radio', { name: 'Go' })).toBeEnabled();
+      expect(screen.getByRole('radio', { name: 'Java' })).toBeEnabled();
     });
   });
 });
 
 describe('CalculatorPanel', () => {
   it('starts at 0', () => {
-    render(<CalculatorPanel backend="java" failover={noFailover} />);
+    render(<CalculatorPanel backend="go" failover={noFailover} />);
     expect(mainLine()).toHaveTextContent(/^0$/);
     expect(topLine()).toHaveTextContent(/^$/);
   });
 
   it('computes 6 ÷ 3 = 2', async () => {
     const user = userEvent.setup();
-    render(<CalculatorPanel backend="java" failover={noFailover} />);
+    render(<CalculatorPanel backend="go" failover={noFailover} />);
     await press(user, '6', 'divide');
     expect(topLine()).toHaveTextContent('6 ÷');
     await press(user, '3');
@@ -227,7 +227,7 @@ describe('CalculatorPanel', () => {
 
   it('chains 2 + 3 × 4 = 20', async () => {
     const user = userEvent.setup();
-    render(<CalculatorPanel backend="java" failover={noFailover} />);
+    render(<CalculatorPanel backend="go" failover={noFailover} />);
     await press(user, '2', 'add', '3', 'multiply');
     await waitFor(() => {
       expect(topLine()).toHaveTextContent('5 ×');
@@ -245,7 +245,7 @@ describe('CalculatorPanel', () => {
 
   it('shows Cannot divide by zero and recovers on next digit', async () => {
     const user = userEvent.setup();
-    render(<CalculatorPanel backend="java" failover={noFailover} />);
+    render(<CalculatorPanel backend="go" failover={noFailover} />);
     await press(user, '5', 'divide', '0', 'equals');
     expect(await screen.findByText('Cannot divide by zero')).toBeInTheDocument();
     expect(topLine()).toHaveTextContent('5 ÷');
@@ -261,7 +261,7 @@ describe('CalculatorPanel', () => {
   it('shows Service unavailable on network error and retries with equals', async () => {
     server.use(http.post(URL_PATH, () => HttpResponse.error(), { once: true }));
     const user = userEvent.setup();
-    render(<CalculatorPanel backend="java" failover={noFailover} />);
+    render(<CalculatorPanel backend="go" failover={noFailover} />);
     await press(user, '7', 'subtract', '9', 'equals');
     expect(await screen.findByText('Service unavailable')).toBeInTheDocument();
     expect(mainLine()).toHaveTextContent(/^9$/);
@@ -275,7 +275,7 @@ describe('CalculatorPanel', () => {
 
   it('supports physical keyboard', async () => {
     const user = userEvent.setup();
-    render(<CalculatorPanel backend="java" failover={noFailover} />);
+    render(<CalculatorPanel backend="go" failover={noFailover} />);
     await user.keyboard('6/3{Enter}');
     await waitFor(() => {
       expect(mainLine()).toHaveTextContent(/^2$/);
@@ -301,7 +301,7 @@ describe('CalculatorPanel', () => {
 
   it('rejects invalid paste with Invalid number', async () => {
     const user = userEvent.setup();
-    render(<CalculatorPanel backend="java" failover={noFailover} />);
+    render(<CalculatorPanel backend="go" failover={noFailover} />);
     await press(user, '4');
     fireEvent.paste(document.body, { clipboardData: { getData: () => '1..2' } });
     expect(await screen.findByText('Invalid number')).toBeInTheDocument();
@@ -309,14 +309,14 @@ describe('CalculatorPanel', () => {
   });
 
   it('accepts a valid paste', () => {
-    render(<CalculatorPanel backend="java" failover={noFailover} />);
+    render(<CalculatorPanel backend="go" failover={noFailover} />);
     fireEvent.paste(document.body, { clipboardData: { getData: () => ' 3,25 ' } });
     expect(mainLine()).toHaveTextContent(/^3\.25$/);
   });
 
   it('sends one request on double equals', async () => {
     const user = userEvent.setup();
-    render(<CalculatorPanel backend="java" failover={noFailover} />);
+    render(<CalculatorPanel backend="go" failover={noFailover} />);
     await press(user, '8', 'add', '1', 'equals', 'equals');
     await waitFor(() => {
       expect(mainLine()).toHaveTextContent(/^9$/);
@@ -327,7 +327,7 @@ describe('CalculatorPanel', () => {
 
   it('does not double-act when Enter follows a clicked button', async () => {
     const user = userEvent.setup();
-    render(<CalculatorPanel backend="java" failover={noFailover} />);
+    render(<CalculatorPanel backend="go" failover={noFailover} />);
     await press(user, '2', 'add');
     await user.keyboard('3{Enter}');
     await waitFor(() => {
@@ -339,7 +339,7 @@ describe('CalculatorPanel', () => {
 
   it('does not re-press the last clicked button on Enter', async () => {
     const user = userEvent.setup();
-    render(<CalculatorPanel backend="java" failover={noFailover} />);
+    render(<CalculatorPanel backend="go" failover={noFailover} />);
     await press(user, '5');
     await user.keyboard('{Enter}');
     expect(mainLine()).toHaveTextContent(/^5$/);
@@ -361,7 +361,7 @@ describe('CalculatorPanel', () => {
       ),
     );
     const user = userEvent.setup();
-    render(<CalculatorPanel backend="java" failover={noFailover} />);
+    render(<CalculatorPanel backend="go" failover={noFailover} />);
     await press(user, '1', 'add', '2', 'equals');
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'equals' })).toBeDisabled();
@@ -390,7 +390,7 @@ describe('CalculatorPanel', () => {
       ),
     );
     const user = userEvent.setup();
-    render(<CalculatorPanel backend="java" failover={noFailover} />);
+    render(<CalculatorPanel backend="go" failover={noFailover} />);
     await press(user, '1', 'add', '2', 'equals');
     await waitFor(() => {
       expect(status()).toHaveAttribute('aria-busy', 'true');
@@ -406,7 +406,7 @@ describe('CalculatorPanel', () => {
 
   it('computes 2 ^ 10 = 1024', async () => {
     const user = userEvent.setup();
-    render(<CalculatorPanel backend="java" failover={noFailover} />);
+    render(<CalculatorPanel backend="go" failover={noFailover} />);
     await press(user, '2', 'power');
     expect(topLine()).toHaveTextContent('2 ^');
     await press(user, '1', '0', 'equals');
@@ -418,7 +418,7 @@ describe('CalculatorPanel', () => {
 
   it('computes 2 ^ 3 × 2 = 16', async () => {
     const user = userEvent.setup();
-    render(<CalculatorPanel backend="java" failover={noFailover} />);
+    render(<CalculatorPanel backend="go" failover={noFailover} />);
     await press(user, '2', 'power', '3', 'multiply');
     await waitFor(() => {
       expect(topLine()).toHaveTextContent('8 ×');
@@ -435,7 +435,7 @@ describe('CalculatorPanel', () => {
 
   it('computes sqrt 9 = 3', async () => {
     const user = userEvent.setup();
-    render(<CalculatorPanel backend="java" failover={noFailover} />);
+    render(<CalculatorPanel backend="go" failover={noFailover} />);
     await press(user, '9', 'square root');
     await waitFor(() => {
       expect(mainLine()).toHaveTextContent(/^3$/);
@@ -446,7 +446,7 @@ describe('CalculatorPanel', () => {
 
   it('computes 2 + 9 sqrt = 5', async () => {
     const user = userEvent.setup();
-    render(<CalculatorPanel backend="java" failover={noFailover} />);
+    render(<CalculatorPanel backend="go" failover={noFailover} />);
     await press(user, '2', 'add', '9', 'square root');
     await waitFor(() => {
       expect(mainLine()).toHaveTextContent(/^3$/);
@@ -464,7 +464,7 @@ describe('CalculatorPanel', () => {
 
   it('computes 20 % 150 = 30', async () => {
     const user = userEvent.setup();
-    render(<CalculatorPanel backend="java" failover={noFailover} />);
+    render(<CalculatorPanel backend="go" failover={noFailover} />);
     await press(user, '2', '0', 'percent');
     expect(topLine()).toHaveTextContent('20 %');
     await press(user, '1', '5', '0', 'equals');
@@ -476,7 +476,7 @@ describe('CalculatorPanel', () => {
 
   it('shows Invalid input for 4 ± sqrt and resets with C', async () => {
     const user = userEvent.setup();
-    render(<CalculatorPanel backend="java" failover={noFailover} />);
+    render(<CalculatorPanel backend="go" failover={noFailover} />);
     await press(user, '4', 'plus/minus', 'square root');
     expect(await screen.findByText('Invalid input')).toBeInTheDocument();
     expect(mainLine()).toHaveTextContent(/^-4$/);
@@ -488,7 +488,7 @@ describe('CalculatorPanel', () => {
 
   it('shows Result too large for 10 ^ 100', async () => {
     const user = userEvent.setup();
-    render(<CalculatorPanel backend="java" failover={noFailover} />);
+    render(<CalculatorPanel backend="go" failover={noFailover} />);
     await press(user, '1', '0', 'power', '1', '0', '0', 'equals');
     expect(await screen.findByText('Result too large')).toBeInTheDocument();
     expect(requests).toEqual([{ operation: 'power', operands: [10, 100] }]);
@@ -496,7 +496,7 @@ describe('CalculatorPanel', () => {
 
   it('shows Cannot divide by zero for 0 ^ -1', async () => {
     const user = userEvent.setup();
-    render(<CalculatorPanel backend="java" failover={noFailover} />);
+    render(<CalculatorPanel backend="go" failover={noFailover} />);
     await press(user, '0', 'power', '1', 'plus/minus', 'equals');
     expect(await screen.findByText('Cannot divide by zero')).toBeInTheDocument();
     expect(requests).toEqual([{ operation: 'power', operands: [0, -1] }]);
@@ -520,7 +520,7 @@ describe('CalculatorPanel', () => {
       ),
     );
     const user = userEvent.setup();
-    render(<CalculatorPanel backend="java" failover={noFailover} />);
+    render(<CalculatorPanel backend="go" failover={noFailover} />);
     await press(user, '9', 'square root');
     await waitFor(() => {
       expect(status()).toHaveAttribute('aria-busy', 'true');
@@ -538,7 +538,7 @@ describe('CalculatorPanel', () => {
 
   it('keyboard 2^8 Enter = 256 and 16@ = 4', async () => {
     const user = userEvent.setup();
-    render(<CalculatorPanel backend="java" failover={noFailover} />);
+    render(<CalculatorPanel backend="go" failover={noFailover} />);
     await user.keyboard('2^8{Enter}');
     await waitFor(() => {
       expect(mainLine()).toHaveTextContent(/^256$/);

@@ -1,10 +1,10 @@
 export type Backend = 'java' | 'go';
 
-/** Java is the reference implementation: used at start-up and whenever both are healthy (unless the user chose Go). */
-export const DEFAULT_BACKEND: Backend = 'java';
+/** Go is the default: used at start-up and whenever both are healthy (unless the user chose Java). */
+export const DEFAULT_BACKEND: Backend = 'go';
 
 /** Display order in the selector. */
-export const BACKENDS: readonly Backend[] = ['java', 'go'];
+export const BACKENDS: readonly Backend[] = ['go', 'java'];
 
 export const BACKEND_LABELS: Readonly<Record<Backend, string>> = { java: 'Java', go: 'Go' };
 

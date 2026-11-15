@@ -20,7 +20,7 @@ graph LR
   subgraph CONTRACT["contract/ — run against Java, Go and both via nginx"]
     PC[parity-cases.json] --- OA[openapi.json]
   end
-  Api -->|default| PJ
-  Api -->|selected or failover| PG
+  Api -->|selected or failover| PJ
+  Api -->|default| PG
   PJ --> JC
   PG --> GH

@@ -6,16 +6,16 @@ Fuente: intención de proyecto — 2026-11-15 · evidencia verificada — 2026-1
 
 | Guardrail | Cómo se hace cumplir | Fuente |
 |-----------|----------------------|--------|
-| Lint obligatorio | `spotless:check` en `verify`; `npm run lint` en CI | `backend/pom.xml`, `.github/workflows/ci.yml` |
-| Cobertura ≥ 90% | `jacoco:check`; umbrales de Vitest | `backend/pom.xml`, `frontend/vite.config.ts` |
+| Lint obligatorio | `spotless:check` en `verify`; `npm run lint` en CI | `backend/java/pom.xml`, `.github/workflows/ci.yml` |
+| Cobertura ≥ 90% | `jacoco:check`; umbrales de Vitest | `backend/java/pom.xml`, `frontend/vite.config.ts` |
 | `.env` fuera del repo | ignorado | `.gitignore` |
-| Puertos configurables | `SERVER_PORT` (Java), `PORT` (Go), `WEB_PORT`, `BACKEND_JAVA_PORT`, `BACKEND_GO_PORT`, `VITE_PORT`, `VITE_JAVA_TARGET`, `VITE_GO_TARGET`; `make up` busca puertos libres | `application.yml`, `backend-go/cmd/server`, `vite.config.ts`, `docker-compose.yml`, `scripts/up.sh` |
+| Puertos configurables | `SERVER_PORT` (Java), `PORT` (Go), `WEB_PORT`, `BACKEND_JAVA_PORT`, `BACKEND_GO_PORT`, `VITE_PORT`, `VITE_JAVA_TARGET`, `VITE_GO_TARGET`; `make up` busca puertos libres | `application.yml`, `backend/go/cmd/server`, `vite.config.ts`, `docker-compose.yml`, `scripts/up.sh` |
 | Paridad Java == Go | `ContractParityIT`, `TestParityCases`, `e2e/tests/parity.spec.ts` sobre `contract/parity-cases.json` | `contract/` |
 | Contrato estable con `title` exactos y orden de validación | `CalculatorControllerTest` (todas las filas de la spec) y `e2e/tests/api-contract.spec.ts` | ADR-002 |
-| BigDecimal en todo el cálculo; `result` como string | `Operation.apply`, `CalculationResult.formatted()` | `backend/.../domain/model/` |
-| Límites de operando y normalización (anti-DoS) | `Operand` + `OperandTest` (exponentes extremos, cero con exponente enorme con `@Timeout`) | `backend/.../domain/model/` |
-| Dominio sin Spring | sin imports de Spring ni Lombok en `domain/**` | `backend/.../domain/` |
-| ProblemDetail sin stack trace; `detail` en inglés y acotado | `ProblemDetailHandler` + tests | `backend/.../adapter/in/web/` |
+| BigDecimal en todo el cálculo; `result` como string | `Operation.apply`, `CalculationResult.formatted()` | `backend/java/.../domain/model/` |
+| Límites de operando y normalización (anti-DoS) | `Operand` + `OperandTest` (exponentes extremos, cero con exponente enorme con `@Timeout`) | `backend/java/.../domain/model/` |
+| Dominio sin Spring | sin imports de Spring ni Lombok en `domain/**` | `backend/java/.../domain/` |
+| ProblemDetail sin stack trace; `detail` en inglés y acotado | `ProblemDetailHandler` + tests | `backend/java/.../adapter/in/web/` |
 
 ## Blocking (sin esto no se integra)
 

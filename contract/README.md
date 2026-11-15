@@ -24,12 +24,12 @@ Esta carpeta define el comportamiento HTTP que los dos backends (Java y Go) debe
    - `rawBody` se copia **byte a byte**. El archivo usa escapes ASCII (`\uXXXX`) para lo que no es ASCII; generalo con `json.dumps(..., ensure_ascii=True)` o editá a mano respetando eso.
    - `viaProxy: false` solo para casos que dependen del path o del query string exactos, que nginx reescribe al quitar el prefijo. El resto corre también a través del proxy.
    - El `HttpClient` de Java no permite headers restringidos (`Host`, `Content-Length`, `Connection`…): un caso que los necesite rompe `ContractParityIT`.
-3. Actualizá los conteos fijos, que existen a propósito para detectar casos perdidos: `backend-go/internal/httpapi/contract_test.go` (total de casos) y `e2e/tests/parity.spec.ts` (total y casos `viaProxy`).
+3. Actualizá los conteos fijos, que existen a propósito para detectar casos perdidos: `backend/go/internal/httpapi/contract_test.go` (total de casos) y `e2e/tests/parity.spec.ts` (total y casos `viaProxy`).
 4. Corré `cd backend && mvn -B verify`, `make test-go` y `make e2e`; los tres deben pasar. Si Go difiere, se corrige Go: el contrato lo define Java.
 
 ## Cómo agregar o cambiar una operación
 
 1. Implementala en Java y en Go.
 2. Regenerá `openapi.json`: `cd backend && mvn -B -q package -DskipTests`, levantá el jar en un puerto libre, pedí `/v3/api-docs` y normalizalo con `python3 -I` (quitar `servers`; `json.dumps(d, indent=2, sort_keys=True, ensure_ascii=False) + "\n"`).
-3. Copiá el resultado a `backend-go/internal/httpapi/openapi.json` (Go lo embebe con `go:embed`; un test exige que sea idéntico a este archivo) y agregá los casos de paridad de la operación.
+3. Copiá el resultado a `backend/go/internal/httpapi/openapi.json` (Go lo embebe con `go:embed`; un test exige que sea idéntico a este archivo) y agregá los casos de paridad de la operación.
 4. Verificá que Java, Go y E2E pasen.
