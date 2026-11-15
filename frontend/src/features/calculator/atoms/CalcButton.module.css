@@ -1,0 +1,56 @@
+.button {
+  min-width: 0;
+  min-height: 3.5rem;
+  border: none;
+  border-radius: 0.75rem;
+  font: inherit;
+  font-size: 1.375rem;
+  cursor: pointer;
+  color: var(--color-text);
+  background: var(--color-key);
+  transition:
+    background-color 120ms ease,
+    transform 60ms ease;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.button:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.button:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.digit {
+  background: var(--color-key);
+}
+
+.operator {
+  background: var(--color-operator);
+  color: var(--color-operator-text);
+}
+
+.action {
+  background: var(--color-action);
+}
+
+.equals {
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+.wide {
+  grid-column: span 2;
+}

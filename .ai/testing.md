@@ -1,6 +1,21 @@
 # Testing — sezzle-calculator
 
-Fuente: intención de proyecto — 2026-11-15
+Fuente: intención de proyecto — 2026-11-15 · evidencia verificada — 2026-11-15
+
+## Evidencia observada
+
+| Elemento | Estado | Fuente |
+|----------|--------|--------|
+| JaCoCo 0.8.16: gate de 0.90 en LINE y BRANCH; excluye `CalculatorApplication` y `config/**` | configurado | `backend/pom.xml` |
+| failsafe 3.6.1 (`integration-test` + `verify`) | configurado | `backend/pom.xml` |
+| Vitest: jsdom, `src/test/setup.ts`, `passWithNoTests`, umbrales de 90 | configurado | `frontend/vite.config.ts` |
+| Playwright: chromium, firefox, webkit, Pixel 7 | configurado | `e2e/playwright.config.ts` |
+| E2E en puerto efímero con proyecto `sezzle-e2e` | configurado | `Makefile`, `docker-compose.test.yml` |
+| Tests de backend | unitarios: `OperandTest`, `OperationTest`, `CalculationResultTest`, `CalculatorServiceTest`, `ProblemDetailHandlerTest`; slice: `CalculatorControllerTest`; integración: `CalculatorApiIT` (RANDOM_PORT) | `backend/src/test/java/` |
+| Tests de frontend | modelo (reducer, límites, mensajes), API (MSW), hook, atoms, molecules, organism y App | `frontend/src/**/*.test.{ts,tsx}` |
+| Tests E2E | `ui-operations`, `ui-errors`, `ui-edge-cases` (incluye layout a 360 px con bounding boxes) y `api-contract` (solo chromium) | `e2e/tests/` |
+| WebKit local | La build WebKit de Playwright 1.65 se cae en macOS 14.3 (`Bus error: 10`). Se verifica en Linux: CI o la imagen `mcr.microsoft.com/playwright:v1.65.1-noble` | — |
+| Última verificación (feat/basic-operations) | validación pendiente (verificación final de dev-skill) | — |
 
 ## Estrategia
 
