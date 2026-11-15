@@ -6,6 +6,8 @@ Clasificación: GRANDE
 Rama: `feat/basic-operations`
 Base: ADR-001 (stack, contrato, BigDecimal) · `.ai/architecture.md` · `.ai/testing.md`
 
+> **Nota (2026-11-15):** esta spec describe la iteración 1. La superan parcialmente `2026-11-15-optional-operations.md` y ADR-003: `power` ya no es `Unsupported operation`, el teclado pasó de 4×5 (19 botones) a 4×6 (22 botones), `sqrt` usa 1 operando y se agregaron el paso de validez por operación y el tema oscuro/claro.
+
 ## Intención
 
 Primera funcionalidad real de la calculadora: las cuatro operaciones básicas funcionando de punta a punta, desde el teclado en pantalla o el teclado físico hasta el backend hexagonal, con TDD y E2E de éxito, error y bordes. El contrato que se implementa acá es el mismo que después va a implementar un backend en Go: el frontend no debe cambiar cuando se reemplace el backend.

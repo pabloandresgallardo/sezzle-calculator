@@ -1,9 +1,22 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sezzle Calculator</title>
+    <!-- No-flash theme: mirrors src/shared/theme/theme.ts (key, values, dark default). -->
+    <script>
+      (function () {
+        var theme = 'dark';
+        try {
+          var stored = window.localStorage.getItem('sezzle-calculator-theme');
+          if (stored === 'light' || stored === 'dark') theme = stored;
+        } catch (e) {
+          // Private mode / blocked storage: stay dark.
+        }
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
                 @Info(
                         title = "Sezzle Calculator API",
                         version = "v1",
-                        description = "Arithmetic operations over exact decimals (BigDecimal). "
+                        description = "Arithmetic operations (add, subtract, multiply, divide, power, sqrt, percentage)"
+                                + " over exact decimals (BigDecimal). "
                                 + "Errors follow RFC 9457 ProblemDetail."))
 public class OpenApiConfig {}

@@ -31,5 +31,13 @@ describe('CalcButton', () => {
     await userEvent.setup().click(button);
     expect(button).not.toHaveFocus();
     expect(button).toHaveClass('wide');
+    expect(button).not.toHaveClass('tall');
+  });
+
+  it('tall spans two grid rows', () => {
+    render(<CalcButton label="=" ariaLabel="equals" variant="equals" tall onPress={vi.fn()} />);
+    const button = screen.getByRole('button', { name: 'equals' });
+    expect(button).toHaveClass('tall');
+    expect(button).not.toHaveClass('wide');
   });
 });

@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.sezzle.calculator.domain.exception.DivisionByZeroException;
 import com.sezzle.calculator.domain.exception.UnsupportedCalculationException;
 import java.math.BigDecimal;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -33,7 +34,7 @@ class OperationTest {
         "DIVIDE, 1, 2048, 0.0004882812"
     })
     void appliesOperation(Operation operation, String left, String right, String expected) {
-        BigDecimal value = operation.apply(op(left), op(right));
+        BigDecimal value = operation.apply(List.of(op(left), op(right)));
 
         assertThat(new CalculationResult(operation, value).formatted()).isEqualTo(expected);
     }
@@ -50,14 +51,15 @@ class OperationTest {
         "SUBTRACT, 1, 0E+999999999, 1"
     })
     void zeroWithHugeExponentCompletesFast(Operation operation, String left, String right, String expected) {
-        BigDecimal value = operation.apply(op(left), op(right));
+        BigDecimal value = operation.apply(List.of(op(left), op(right)));
 
         assertThat(new CalculationResult(operation, value).formatted()).isEqualTo(expected);
     }
 
     @Test
     void divisionByZeroThrows() {
-        assertThatThrownBy(() -> Operation.DIVIDE.apply(op("5"), op("0"))).isInstanceOf(DivisionByZeroException.class);
+        assertThatThrownBy(() -> Operation.DIVIDE.apply(List.of(op("5"), op("0"))))
+                .isInstanceOf(DivisionByZeroException.class);
     }
 
     @Test
@@ -66,9 +68,10 @@ class OperationTest {
         assertThat(Operation.SUBTRACT.code()).isEqualTo("subtract");
         assertThat(Operation.MULTIPLY.code()).isEqualTo("multiply");
         assertThat(Operation.DIVIDE.code()).isEqualTo("divide");
-        for (Operation operation : Operation.values()) {
-            assertThat(operation.arity()).isEqualTo(2);
-        }
+        assertThat(Operation.ADD.arity()).isEqualTo(2);
+        assertThat(Operation.SUBTRACT.arity()).isEqualTo(2);
+        assertThat(Operation.MULTIPLY.arity()).isEqualTo(2);
+        assertThat(Operation.DIVIDE.arity()).isEqualTo(2);
     }
 
     @Test
@@ -77,7 +80,7 @@ class OperationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"ADD", "power"})
+    @ValueSource(strings = {"ADD", "modulo"})
     @NullAndEmptySource
     void fromCodeRejectsUnknown(String code) {
         assertThatThrownBy(() -> Operation.fromCode(code)).isInstanceOf(UnsupportedCalculationException.class);

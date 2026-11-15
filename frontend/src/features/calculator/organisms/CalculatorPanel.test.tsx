@@ -10,26 +10,45 @@ const URL_PATH = '/api/v1/calculate';
 
 interface CalculateBody {
   operation: Operation;
-  operands: [number, number];
+  operands: number[];
 }
 
 let requests: CalculateBody[];
 
+function problem(title: string) {
+  return HttpResponse.json({ title, status: 400 }, { status: 400 });
+}
+
 /** Fake backend: plain JS arithmetic is exact for the small values used here. */
-const calculatorHandler = http.post(URL_PATH, async ({ request }) => {
-  const body = (await request.json()) as CalculateBody;
-  requests.push(body);
-  const [a, b] = body.operands;
-  if (body.operation === 'divide' && b === 0) {
-    return HttpResponse.json({ title: 'Division by zero', status: 400 }, { status: 400 });
+function fakeCalculate({ operation, operands }: CalculateBody) {
+  const [a = NaN, b = NaN] = operands;
+  if ((operation === 'divide' && b === 0) || (operation === 'power' && a === 0 && b < 0)) {
+    return problem('Division by zero');
+  }
+  if (operation === 'sqrt' && a < 0) {
+    return problem('Invalid operand');
   }
   const results: Record<Operation, number> = {
     add: a + b,
     subtract: a - b,
     multiply: a * b,
     divide: a / b,
+    power: a ** b,
+    sqrt: Math.sqrt(a),
+    percentage: (a * b) / 100,
   };
-  return HttpResponse.json({ operation: body.operation, result: String(results[body.operation]) });
+  const result = results[operation];
+  // The real backend rejects results with more than 100 integer digits.
+  if (Math.abs(result) >= 1e100) {
+    return problem('Result out of range');
+  }
+  return HttpResponse.json({ operation, result: String(result) });
+}
+
+const calculatorHandler = http.post(URL_PATH, async ({ request }) => {
+  const body = (await request.json()) as CalculateBody;
+  requests.push(body);
+  return fakeCalculate(body);
 });
 
 function status(): HTMLElement {
@@ -254,5 +273,159 @@ describe('CalculatorPanel', () => {
       expect(mainLine()).toHaveTextContent(/^9$/);
     });
     expect(screen.queryByText('999')).not.toBeInTheDocument();
+  });
+
+  it('computes 2 ^ 10 = 1024', async () => {
+    const user = userEvent.setup();
+    render(<CalculatorPanel />);
+    await press(user, '2', 'power');
+    expect(topLine()).toHaveTextContent('2 ^');
+    await press(user, '1', '0', 'equals');
+    await waitFor(() => {
+      expect(mainLine()).toHaveTextContent(/^1024$/);
+    });
+    expect(requests).toEqual([{ operation: 'power', operands: [2, 10] }]);
+  });
+
+  it('computes 2 ^ 3 × 2 = 16', async () => {
+    const user = userEvent.setup();
+    render(<CalculatorPanel />);
+    await press(user, '2', 'power', '3', 'multiply');
+    await waitFor(() => {
+      expect(topLine()).toHaveTextContent('8 ×');
+    });
+    await press(user, '2', 'equals');
+    await waitFor(() => {
+      expect(mainLine()).toHaveTextContent(/^16$/);
+    });
+    expect(requests).toEqual([
+      { operation: 'power', operands: [2, 3] },
+      { operation: 'multiply', operands: [8, 2] },
+    ]);
+  });
+
+  it('computes sqrt 9 = 3', async () => {
+    const user = userEvent.setup();
+    render(<CalculatorPanel />);
+    await press(user, '9', 'square root');
+    await waitFor(() => {
+      expect(mainLine()).toHaveTextContent(/^3$/);
+    });
+    expect(topLine()).toHaveTextContent(/^$/);
+    expect(requests).toEqual([{ operation: 'sqrt', operands: [9] }]);
+  });
+
+  it('computes 2 + 9 sqrt = 5', async () => {
+    const user = userEvent.setup();
+    render(<CalculatorPanel />);
+    await press(user, '2', 'add', '9', 'square root');
+    await waitFor(() => {
+      expect(mainLine()).toHaveTextContent(/^3$/);
+    });
+    expect(topLine()).toHaveTextContent('2 +');
+    await press(user, 'equals');
+    await waitFor(() => {
+      expect(mainLine()).toHaveTextContent(/^5$/);
+    });
+    expect(requests).toEqual([
+      { operation: 'sqrt', operands: [9] },
+      { operation: 'add', operands: [2, 3] },
+    ]);
+  });
+
+  it('computes 20 % 150 = 30', async () => {
+    const user = userEvent.setup();
+    render(<CalculatorPanel />);
+    await press(user, '2', '0', 'percent');
+    expect(topLine()).toHaveTextContent('20 %');
+    await press(user, '1', '5', '0', 'equals');
+    await waitFor(() => {
+      expect(mainLine()).toHaveTextContent(/^30$/);
+    });
+    expect(requests).toEqual([{ operation: 'percentage', operands: [20, 150] }]);
+  });
+
+  it('shows Invalid input for 4 ± sqrt and resets with C', async () => {
+    const user = userEvent.setup();
+    render(<CalculatorPanel />);
+    await press(user, '4', 'plus/minus', 'square root');
+    expect(await screen.findByText('Invalid input')).toBeInTheDocument();
+    expect(mainLine()).toHaveTextContent(/^-4$/);
+    await press(user, 'clear');
+    expect(screen.queryByText('Invalid input')).not.toBeInTheDocument();
+    expect(mainLine()).toHaveTextContent(/^0$/);
+    expect(requests).toEqual([{ operation: 'sqrt', operands: [-4] }]);
+  });
+
+  it('shows Result too large for 10 ^ 100', async () => {
+    const user = userEvent.setup();
+    render(<CalculatorPanel />);
+    await press(user, '1', '0', 'power', '1', '0', '0', 'equals');
+    expect(await screen.findByText('Result too large')).toBeInTheDocument();
+    expect(requests).toEqual([{ operation: 'power', operands: [10, 100] }]);
+  });
+
+  it('shows Cannot divide by zero for 0 ^ -1', async () => {
+    const user = userEvent.setup();
+    render(<CalculatorPanel />);
+    await press(user, '0', 'power', '1', 'plus/minus', 'equals');
+    expect(await screen.findByText('Cannot divide by zero')).toBeInTheDocument();
+    expect(requests).toEqual([{ operation: 'power', operands: [0, -1] }]);
+  });
+
+  it('sends one request on sqrt then equals while pending', async () => {
+    let release: () => void = () => undefined;
+    server.use(
+      http.post(
+        URL_PATH,
+        async ({ request }) => {
+          const body = (await request.json()) as CalculateBody;
+          requests.push(body);
+          return new Promise<Response>((resolve) => {
+            release = () => {
+              resolve(fakeCalculate(body));
+            };
+          });
+        },
+        { once: true },
+      ),
+    );
+    const user = userEvent.setup();
+    render(<CalculatorPanel />);
+    await press(user, '9', 'square root');
+    await waitFor(() => {
+      expect(status()).toHaveAttribute('aria-busy', 'true');
+    });
+    expect(screen.getByRole('button', { name: 'equals' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'square root' })).toBeDisabled();
+    await user.keyboard('={Enter}@');
+    release();
+    await waitFor(() => {
+      expect(mainLine()).toHaveTextContent(/^3$/);
+    });
+    await press(user, 'equals');
+    expect(requests).toEqual([{ operation: 'sqrt', operands: [9] }]);
+  });
+
+  it('keyboard 2^8 Enter = 256 and 16@ = 4', async () => {
+    const user = userEvent.setup();
+    render(<CalculatorPanel />);
+    await user.keyboard('2^8{Enter}');
+    await waitFor(() => {
+      expect(mainLine()).toHaveTextContent(/^256$/);
+    });
+    await user.keyboard('16@');
+    await waitFor(() => {
+      expect(mainLine()).toHaveTextContent(/^4$/);
+    });
+    await user.keyboard('{Escape}20%150=');
+    await waitFor(() => {
+      expect(mainLine()).toHaveTextContent(/^30$/);
+    });
+    expect(requests).toEqual([
+      { operation: 'power', operands: [2, 8] },
+      { operation: 'sqrt', operands: [16] },
+      { operation: 'percentage', operands: [20, 150] },
+    ]);
   });
 });

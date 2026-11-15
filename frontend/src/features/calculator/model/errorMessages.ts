@@ -10,6 +10,8 @@ const INVALID_REQUEST = 'Invalid request';
 const MESSAGES_BY_TITLE = new Map<string, string>([
   ['Division by zero', 'Cannot divide by zero'],
   ['Operand out of range', 'Number out of range'],
+  ['Invalid operand', 'Invalid input'],
+  ['Result out of range', 'Result too large'],
   ['Unsupported operation', INVALID_REQUEST],
   ['Invalid operand count', INVALID_REQUEST],
   ['Malformed request', INVALID_REQUEST],

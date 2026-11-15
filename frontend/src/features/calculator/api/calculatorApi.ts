@@ -30,7 +30,7 @@ function stringField(body: unknown, field: string): string | null {
 
 export async function calculate(
   operation: Operation,
-  operands: [string, string],
+  operands: readonly string[],
   signal?: AbortSignal,
 ): Promise<string> {
   let response: Response;

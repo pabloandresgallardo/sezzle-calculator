@@ -162,6 +162,153 @@ describe('useCalculator', () => {
     expect(result.current.display).toBe('7');
   });
 
+  it('accepts shifted symbol keys', () => {
+    server.use(hangingHandler());
+    const { result } = renderHook(() => useCalculator());
+    act(() => {
+      fireEvent.keyDown(window, { key: '2' });
+      fireEvent.keyDown(window, { key: '^', shiftKey: true });
+    });
+    expect(result.current.expression).toBe('2 ^');
+    act(() => {
+      fireEvent.keyDown(window, { key: '%', shiftKey: true });
+    });
+    expect(result.current.expression).toBe('2 %');
+    act(() => {
+      fireEvent.keyDown(window, { key: '9' });
+      fireEvent.keyDown(window, { key: '@', shiftKey: true });
+    });
+    expect(result.current.state.phase).toBe('pending');
+    expect(vi.mocked(calculate).mock.lastCall?.slice(0, 2)).toEqual(['sqrt', ['9']]);
+  });
+
+  it('maps y to power', () => {
+    const { result } = renderHook(() => useCalculator());
+    act(() => {
+      fireEvent.keyDown(window, { key: '3' });
+      fireEvent.keyDown(window, { key: 'y' });
+    });
+    expect(result.current.expression).toBe('3 ^');
+  });
+
+  it('maps uppercase Y to power but ignores Ctrl+Y and Cmd+Y', () => {
+    const { result } = renderHook(() => useCalculator());
+    act(() => {
+      fireEvent.keyDown(window, { key: '3' });
+      fireEvent.keyDown(window, { key: 'Y', ctrlKey: true });
+      fireEvent.keyDown(window, { key: 'Y', metaKey: true });
+    });
+    expect(result.current.expression).toBe('');
+    act(() => {
+      fireEvent.keyDown(window, { key: 'Y', shiftKey: true });
+    });
+    expect(result.current.expression).toBe('3 ^');
+  });
+
+  it('ignores symbol keys with ctrl (no AltGraph) or meta', () => {
+    const { result } = renderHook(() => useCalculator());
+    const event = new KeyboardEvent('keydown', {
+      key: '^',
+      ctrlKey: true,
+      shiftKey: true,
+      cancelable: true,
+      bubbles: true,
+    });
+    act(() => {
+      fireEvent.keyDown(window, { key: '3' });
+      window.dispatchEvent(event);
+      fireEvent.keyDown(window, { key: '@', metaKey: true });
+      fireEvent.keyDown(window, { key: '%', ctrlKey: true });
+    });
+    expect(event.defaultPrevented).toBe(false);
+    expect(result.current.expression).toBe('');
+    expect(result.current.state.phase).toBe('input');
+    expect(result.current.display).toBe('3');
+  });
+
+  describe('international layouts (AltGr / Option)', () => {
+    function press(init: KeyboardEventInit): KeyboardEvent {
+      const event = new KeyboardEvent('keydown', { cancelable: true, bubbles: true, ...init });
+      window.dispatchEvent(event);
+      return event;
+    }
+
+    it('accepts AltGr+@ (Spanish Windows) as sqrt', () => {
+      server.use(hangingHandler());
+      const { result } = renderHook(() => useCalculator());
+      let event: KeyboardEvent | undefined;
+      act(() => {
+        press({ key: '9' });
+        event = press({ key: '@', ctrlKey: true, altKey: true, modifierAltGraph: true });
+      });
+      expect(event?.defaultPrevented).toBe(true);
+      expect(result.current.state.phase).toBe('pending');
+      expect(vi.mocked(calculate).mock.lastCall?.slice(0, 2)).toEqual(['sqrt', ['9']]);
+    });
+
+    it('accepts Option+@ (Spanish macOS) as sqrt', () => {
+      server.use(hangingHandler());
+      const { result } = renderHook(() => useCalculator());
+      let event: KeyboardEvent | undefined;
+      act(() => {
+        press({ key: '4' });
+        event = press({ key: '@', altKey: true });
+      });
+      expect(event?.defaultPrevented).toBe(true);
+      expect(result.current.state.phase).toBe('pending');
+      expect(vi.mocked(calculate).mock.lastCall?.slice(0, 2)).toEqual(['sqrt', ['4']]);
+    });
+
+    it('accepts Alt+% and AltGr+^ as operators', () => {
+      const { result } = renderHook(() => useCalculator());
+      act(() => {
+        press({ key: '5' });
+        press({ key: '%', altKey: true });
+      });
+      expect(result.current.expression).toBe('5 %');
+      act(() => {
+        press({ key: '^', ctrlKey: true, altKey: true, modifierAltGraph: true });
+      });
+      expect(result.current.expression).toBe('5 ^');
+    });
+
+    it('ignores Ctrl+Alt+@ without AltGraph and Meta with any modifier', () => {
+      const { result } = renderHook(() => useCalculator());
+      let events: KeyboardEvent[] = [];
+      act(() => {
+        press({ key: '9' });
+        events = [
+          press({ key: '@', ctrlKey: true, altKey: true }),
+          press({ key: '@', metaKey: true }),
+          press({ key: '@', metaKey: true, altKey: true }),
+          press({ key: '@', metaKey: true, modifierAltGraph: true }),
+        ];
+      });
+      expect(events.map((e) => e.defaultPrevented)).toEqual([false, false, false, false]);
+      expect(result.current.state.phase).toBe('input');
+      expect(result.current.display).toBe('9');
+    });
+
+    it.each(['7', 'Enter', 'Backspace', 'Escape', 'F9', '.', ',', 'y', '+'])(
+      'still ignores %s with Alt, Ctrl or AltGr',
+      (key) => {
+        const { result } = renderHook(() => useCalculator());
+        let events: KeyboardEvent[] = [];
+        act(() => {
+          press({ key: '3' });
+          events = [
+            press({ key, altKey: true }),
+            press({ key, ctrlKey: true }),
+            press({ key, ctrlKey: true, altKey: true, modifierAltGraph: true }),
+          ];
+        });
+        expect(events.map((e) => e.defaultPrevented)).toEqual([false, false, false]);
+        expect(result.current.display).toBe('3');
+        expect(result.current.expression).toBe('');
+      },
+    );
+  });
+
   it.each([
     ['input', () => document.createElement('input')],
     ['textarea', () => document.createElement('textarea')],

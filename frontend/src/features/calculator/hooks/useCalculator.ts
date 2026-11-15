@@ -7,13 +7,15 @@ import {
   type CalculatorState,
 } from '../model/calculatorReducer';
 import { messageForApiTitle } from '../model/errorMessages';
-import type { Operation } from '../model/types';
+import type { BinaryOperation } from '../model/types';
 
-const SYMBOLS: Record<Operation, string> = {
+const SYMBOLS: Record<BinaryOperation, string> = {
   add: '+',
   subtract: '−',
   multiply: '×',
   divide: '÷',
+  power: '^',
+  percentage: '%',
 };
 
 const KEY_ACTIONS = new Map<string, CalculatorAction>([
@@ -21,6 +23,11 @@ const KEY_ACTIONS = new Map<string, CalculatorAction>([
   ['-', { type: 'operator', operator: 'subtract' }],
   ['*', { type: 'operator', operator: 'multiply' }],
   ['/', { type: 'operator', operator: 'divide' }],
+  ['^', { type: 'operator', operator: 'power' }],
+  ['y', { type: 'operator', operator: 'power' }],
+  ['Y', { type: 'operator', operator: 'power' }],
+  ['%', { type: 'operator', operator: 'percentage' }],
+  ['@', { type: 'unaryOperator', operator: 'sqrt' }],
   ['Enter', { type: 'equals' }],
   ['=', { type: 'equals' }],
   ['Escape', { type: 'clear' }],
@@ -33,6 +40,28 @@ const KEY_ACTIONS = new Map<string, CalculatorAction>([
     { type: 'digit', digit: String(d) },
   ]),
 ]);
+
+/** Symbols that international layouts produce with AltGr (Windows/Linux) or Option (macOS), e.g. `@` on Spanish. */
+const ALT_COMPOSED_SYMBOLS = new Set(['@', '^', '%']);
+
+/**
+ * Shortcuts (Ctrl/Meta/Alt chords) belong to the browser or OS. The exception is a symbol composed
+ * with AltGr (reported via `getModifierState('AltGraph')`, not the ctrl+alt heuristic) or with Option.
+ */
+function isShortcut(event: KeyboardEvent): boolean {
+  if (event.metaKey) {
+    return true;
+  }
+  if (!event.ctrlKey && !event.altKey) {
+    return false;
+  }
+  if (!ALT_COMPOSED_SYMBOLS.has(event.key)) {
+    return true;
+  }
+  const viaAltGraph = event.getModifierState('AltGraph');
+  const viaOption = event.altKey && !event.ctrlKey;
+  return !(viaAltGraph || viaOption);
+}
 
 /** Keys typed into a foreign editable element (another input on the page) belong to it. */
 function isEditableTarget(target: EventTarget | null): boolean {
@@ -85,7 +114,8 @@ export function useCalculator(): UseCalculator {
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.ctrlKey || event.metaKey || event.altKey || isEditableTarget(event.target)) {
+      // Shift is allowed on purpose: `^`, `%` and `@` need it on many layouts.
+      if (isShortcut(event) || isEditableTarget(event.target)) {
         return;
       }
       const action = KEY_ACTIONS.get(event.key);
@@ -105,6 +135,7 @@ export function useCalculator(): UseCalculator {
       dispatch({ type: 'paste', text: event.clipboardData?.getData('text') ?? '' });
     }
 
+    // ThemeToggle relies on this listener being on `window` (bubble phase): it stops Enter/Space propagation so `=` isn't triggered.
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('paste', onPaste);
     return () => {

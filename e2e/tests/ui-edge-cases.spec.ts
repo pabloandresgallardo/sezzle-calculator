@@ -29,11 +29,11 @@ test.describe('mobile layout', () => {
 
   for (const viewport of [null, { width: 360, height: 740 }]) {
     const name = viewport ? `${viewport.width}px viewport` : 'default Pixel 7 viewport';
-    test(`no horizontal overflow and 19 visible buttons (${name})`, async ({ page }) => {
+    test(`no horizontal overflow and 22 visible buttons (${name})`, async ({ page }) => {
       if (viewport) await page.setViewportSize(viewport);
       await page.goto('/');
-      const buttons = page.getByRole('button');
-      await expect(buttons).toHaveCount(19);
+      const buttons = page.getByRole('region', { name: 'Calculator' }).getByRole('button');
+      await expect(buttons).toHaveCount(22);
       const innerWidth = await page.evaluate(() => window.innerWidth);
       for (const button of await buttons.all()) {
         await expect(button).toBeVisible();

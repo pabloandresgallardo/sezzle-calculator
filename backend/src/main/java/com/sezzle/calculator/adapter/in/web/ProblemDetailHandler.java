@@ -3,7 +3,9 @@ package com.sezzle.calculator.adapter.in.web;
 import com.sezzle.calculator.domain.exception.CalculationException;
 import com.sezzle.calculator.domain.exception.DivisionByZeroException;
 import com.sezzle.calculator.domain.exception.InvalidOperandCountException;
+import com.sezzle.calculator.domain.exception.InvalidOperandException;
 import com.sezzle.calculator.domain.exception.OperandOutOfRangeException;
+import com.sezzle.calculator.domain.exception.ResultOutOfRangeException;
 import com.sezzle.calculator.domain.exception.UnsupportedCalculationException;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +34,8 @@ public class ProblemDetailHandler extends ResponseEntityExceptionHandler {
     static final String UNSUPPORTED_OPERATION = "Unsupported operation";
     static final String INVALID_OPERAND_COUNT = "Invalid operand count";
     static final String OPERAND_OUT_OF_RANGE = "Operand out of range";
+    static final String INVALID_OPERAND = "Invalid operand";
+    static final String RESULT_OUT_OF_RANGE = "Result out of range";
     static final String INTERNAL_ERROR = "Internal error";
 
     private static final String NOT_READABLE_DETAIL =
@@ -78,6 +82,16 @@ public class ProblemDetailHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(OperandOutOfRangeException.class)
     ProblemDetail handleOperandOutOfRange(OperandOutOfRangeException ex) {
         return badRequest(OPERAND_OUT_OF_RANGE, ex);
+    }
+
+    @ExceptionHandler(InvalidOperandException.class)
+    ProblemDetail handleInvalidOperand(InvalidOperandException ex) {
+        return badRequest(INVALID_OPERAND, ex);
+    }
+
+    @ExceptionHandler(ResultOutOfRangeException.class)
+    ProblemDetail handleResultOutOfRange(ResultOutOfRangeException ex) {
+        return badRequest(RESULT_OUT_OF_RANGE, ex);
     }
 
     @ExceptionHandler(Exception.class)

@@ -18,6 +18,18 @@ describe('calculate', () => {
     expect(body).toBe('{"operation":"add","operands":[0.1,0.2]}');
   });
 
+  it('sends single operand for sqrt', async () => {
+    let body = '';
+    server.use(
+      http.post(URL_PATH, async ({ request }) => {
+        body = await request.text();
+        return HttpResponse.json({ operation: 'sqrt', result: '3' });
+      }),
+    );
+    await expect(calculate('sqrt', ['9'])).resolves.toBe('3');
+    expect(body).toBe('{"operation":"sqrt","operands":[9]}');
+  });
+
   it('serializes trailing-dot operands as numbers', async () => {
     let body = '';
     server.use(

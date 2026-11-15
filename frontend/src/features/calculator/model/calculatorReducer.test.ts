@@ -35,6 +35,8 @@ describe('calculatorReducer', () => {
       error: null,
       pendingOperator: null,
       request: null,
+      replaceNext: false,
+      requestedFrom: null,
     });
   });
 
@@ -151,6 +153,8 @@ describe('calculatorReducer', () => {
         error: 'Cannot divide by zero',
         pendingOperator: null,
         request: null,
+        replaceNext: false,
+        requestedFrom: null,
       };
       expect(run([{ type: 'clear' }], from)).toEqual(initialState);
     });
@@ -388,6 +392,267 @@ describe('calculatorReducer', () => {
     });
   });
 
+  describe('power / percentage', () => {
+    it('chains power then multiply', () => {
+      const pending = pendingAfter([
+        ...digits('2'),
+        { type: 'operator', operator: 'power' },
+        ...digits('3'),
+        { type: 'operator', operator: 'multiply' },
+      ]);
+      expect(pending).toMatchObject({
+        request: { operation: 'power', operands: ['2', '3'] },
+        pendingOperator: 'multiply',
+      });
+    });
+
+    it('percentage behaves as binary', () => {
+      const pending = pendingAfter([
+        ...digits('20'),
+        { type: 'operator', operator: 'percentage' },
+        ...digits('150'),
+        { type: 'equals' },
+      ]);
+      expect(pending).toMatchObject({
+        request: { operation: 'percentage', operands: ['20', '150'] },
+        pendingOperator: null,
+      });
+    });
+
+    it('replaces the operator when no second operand', () => {
+      const state = run([
+        ...digits('2'),
+        { type: 'operator', operator: 'add' },
+        { type: 'operator', operator: 'power' },
+      ]);
+      expect(state).toEqual({
+        ...initialState,
+        previous: '2',
+        operator: 'power',
+        current: '',
+        phase: 'awaitingOperand',
+      });
+    });
+
+    it('continues from a result', () => {
+      expect(run([{ type: 'operator', operator: 'percentage' }], resultState)).toEqual({
+        ...initialState,
+        previous: '5',
+        operator: 'percentage',
+        current: '',
+        phase: 'awaitingOperand',
+      });
+    });
+  });
+
+  describe('unaryOperator (sqrt)', () => {
+    const SQRT: CalculatorAction = { type: 'unaryOperator', operator: 'sqrt' };
+
+    /** `2 + 9 √` resolved to `3`: second operand set, next digit replaces it. */
+    function afterSqrtWithPendingBinary(result = '3'): CalculatorState {
+      const pending = pendingAfter([
+        ...digits('2'),
+        { type: 'operator', operator: 'add' },
+        ...digits('9'),
+        SQRT,
+      ]);
+      return run([{ type: 'resolved', result }], pending);
+    }
+
+    it('sqrt requests single operand', () => {
+      const pending = pendingAfter([...digits('9'), SQRT]);
+      expect(pending.request).toEqual({ operation: 'sqrt', operands: ['9'] });
+      expect(pending.pendingOperator).toBeNull();
+    });
+
+    it('sqrt requests the result when within limits', () => {
+      const pending = run([SQRT], resultState);
+      expect(pending).toMatchObject({
+        phase: 'pending',
+        current: '5',
+        request: { operation: 'sqrt', operands: ['5'] },
+      });
+    });
+
+    it('sqrt keeps previous and operator while pending', () => {
+      const pending = pendingAfter([
+        ...digits('2'),
+        { type: 'operator', operator: 'add' },
+        ...digits('9'),
+        SQRT,
+      ]);
+      expect(pending).toMatchObject({
+        previous: '2',
+        operator: 'add',
+        current: '9',
+        pendingOperator: null,
+        request: { operation: 'sqrt', operands: ['9'] },
+      });
+    });
+
+    it('sqrt with pending binary keeps previous', () => {
+      const resolved = afterSqrtWithPendingBinary();
+      expect(resolved).toMatchObject({
+        previous: '2',
+        operator: 'add',
+        current: '3',
+        phase: 'input',
+        error: null,
+        request: null,
+      });
+
+      const replaced = run(digits('4'), resolved);
+      expect(replaced).toMatchObject({ previous: '2', operator: 'add', current: '4' });
+      expect(run(digits('5'), replaced).current).toBe('45');
+
+      const equals = run([{ type: 'equals' }], resolved);
+      expect(equals).toMatchObject({
+        phase: 'pending',
+        request: { operation: 'add', operands: ['2', '3'] },
+      });
+    });
+
+    it('decimal after sqrt with pending binary replaces current', () => {
+      expect(run([{ type: 'decimal' }], afterSqrtWithPendingBinary()).current).toBe('0.');
+    });
+
+    it('backspace after sqrt with pending binary does nothing', () => {
+      const resolved = afterSqrtWithPendingBinary('1.5');
+      expect(run([{ type: 'backspace' }], resolved)).toEqual(resolved);
+    });
+
+    it('paste after sqrt with pending binary replaces and allows appending', () => {
+      const state = run(
+        [{ type: 'paste', text: '7' }, ...digits('1')],
+        afterSqrtWithPendingBinary(),
+      );
+      expect(state).toMatchObject({ previous: '2', current: '71' });
+    });
+
+    it('toggleSign after unary keeps replace flag', () => {
+      const negated = run([{ type: 'toggleSign' }], afterSqrtWithPendingBinary());
+      expect(negated).toMatchObject({ previous: '2', operator: 'add', current: '-3' });
+      expect(run(digits('4'), negated).current).toBe('4');
+    });
+
+    it('operator after sqrt with pending binary chains with the root', () => {
+      expect(
+        run([{ type: 'operator', operator: 'multiply' }], afterSqrtWithPendingBinary()),
+      ).toMatchObject({
+        phase: 'pending',
+        pendingOperator: 'multiply',
+        request: { operation: 'add', operands: ['2', '3'] },
+      });
+    });
+
+    it('sqrt without pending goes to result', () => {
+      const pending = pendingAfter([...digits('9'), SQRT]);
+      const resolved = run([{ type: 'resolved', result: '3' }], pending);
+      expect(resolved).toEqual({ ...initialState, current: '3', phase: 'result' });
+      expect(run(digits('7'), resolved)).toEqual({ ...initialState, current: '7' });
+      expect(run([{ type: 'operator', operator: 'add' }], resolved)).toMatchObject({
+        previous: '3',
+        operator: 'add',
+        phase: 'awaitingOperand',
+      });
+    });
+
+    it('oversized unary result is shown and cannot be used as operand', () => {
+      const pending = pendingAfter([...digits('9'), SQRT]);
+      const resolved = run([{ type: 'resolved', result: OVERSIZED }], pending);
+      expect(resolved).toEqual({ ...initialState, current: OVERSIZED, phase: 'result' });
+      expect(run([{ type: 'operator', operator: 'add' }], resolved)).toEqual({
+        ...resolved,
+        error: 'Result too long to continue',
+      });
+    });
+
+    it('oversized unary result with pending binary cannot be used as operand', () => {
+      const resolved = afterSqrtWithPendingBinary(OVERSIZED);
+      expect(resolved).toMatchObject({ previous: '2', current: OVERSIZED, error: null });
+      expect(run([{ type: 'equals' }], resolved)).toEqual({
+        ...resolved,
+        error: 'Result too long to continue',
+      });
+      expect(run([{ type: 'operator', operator: 'add' }], resolved)).toEqual({
+        ...resolved,
+        error: 'Result too long to continue',
+      });
+      expect(run([SQRT], resolved)).toEqual({
+        ...resolved,
+        error: 'Result too long to continue',
+      });
+    });
+
+    it('unaryOperator in awaitingOperand is a no-op', () => {
+      const awaiting = run([...digits('2'), { type: 'operator', operator: 'add' }]);
+      expect(run([SQRT], awaiting)).toEqual(awaiting);
+    });
+
+    it('unaryOperator ignored while pending', () => {
+      const pending = pendingAfter([
+        ...digits('2'),
+        { type: 'operator', operator: 'add' },
+        ...digits('3'),
+        { type: 'equals' },
+      ]);
+      expect(calculatorReducer(pending, SQRT)).toBe(pending);
+      const unaryPending = pendingAfter([...digits('9'), SQRT]);
+      expect(calculatorReducer(unaryPending, SQRT)).toBe(unaryPending);
+    });
+
+    it('sqrt on oversized result sets resultTooLong', () => {
+      const from: CalculatorState = { ...resultState, current: OVERSIZED };
+      expect(run([SQRT], from)).toEqual({ ...from, error: 'Result too long to continue' });
+    });
+
+    it('rejected unary restores result phase', () => {
+      const pending = run([SQRT], resultState);
+      expect(run([{ type: 'rejected', message: 'Invalid input' }], pending)).toEqual({
+        ...resultState,
+        error: 'Invalid input',
+      });
+    });
+
+    it('rejected unary restores input phase', () => {
+      const from = run([...digits('4'), { type: 'toggleSign' }]);
+      const pending = run([SQRT], from);
+      expect(run([{ type: 'rejected', message: 'Invalid input' }], pending)).toEqual({
+        ...from,
+        error: 'Invalid input',
+      });
+
+      const withBinary = run([
+        ...digits('2'),
+        { type: 'operator', operator: 'add' },
+        ...digits('9'),
+      ]);
+      expect(run([SQRT, { type: 'rejected', message: 'Service unavailable' }], withBinary)).toEqual(
+        { ...withBinary, error: 'Service unavailable' },
+      );
+    });
+
+    it('rejected unary keeps the replace flag', () => {
+      const resolved = afterSqrtWithPendingBinary();
+      const rejected = run([SQRT, { type: 'rejected', message: 'Service unavailable' }], resolved);
+      expect(rejected).toEqual({ ...resolved, error: 'Service unavailable' });
+      expect(run(digits('4'), rejected).current).toBe('4');
+    });
+
+    it('clears a previous error', () => {
+      expect(run([SQRT], errorState)).toMatchObject({
+        phase: 'pending',
+        error: null,
+        request: { operation: 'sqrt', operands: ['12'] },
+      });
+      const awaiting: CalculatorState = {
+        ...run([...digits('2'), { type: 'operator', operator: 'add' }]),
+        error: 'Invalid input',
+      };
+      expect(run([SQRT], awaiting).error).toBeNull();
+    });
+  });
+
   it('ignores input while pending except clear', () => {
     const pending = pendingAfter([
       ...digits('2'),
@@ -403,6 +668,7 @@ describe('calculatorReducer', () => {
       { type: 'operator', operator: 'subtract' },
       { type: 'equals' },
       { type: 'paste', text: '9' },
+      { type: 'unaryOperator', operator: 'sqrt' },
     ];
     for (const action of ignored) {
       expect(calculatorReducer(pending, action)).toBe(pending);
